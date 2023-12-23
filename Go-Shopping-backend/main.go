@@ -18,7 +18,7 @@ func main() {
 
 	router.GET("/products", func(ctx *gin.Context) {
 		ctx.JSON(200, gin.H{
-			"product": "all",
+			"product": "hello",
 		})
 	})
 
