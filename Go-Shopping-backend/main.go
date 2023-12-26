@@ -11,7 +11,7 @@ func main() {
 	router := gin.Default()
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:5173", "https://go-backend-olive.vercel.app/"} // specify the origins you want to allow
+	config.AllowOrigins = []string{"http://localhost:5173"} // specify the origins you want to allow
 	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE"}
 	router.Use(cors.New(config))
 
