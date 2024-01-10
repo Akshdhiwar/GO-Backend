@@ -1,8 +1,8 @@
 package main
 
 import (
+	"Go-Shopping-backend/controller"
 	"Go-Shopping-backend/initializers"
-	"Go-Shopping-backend/routes"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -11,6 +11,7 @@ import (
 func init() {
 	initializers.LoadEnvVariables()
 	initializers.ConnectToDB()
+	initializers.SyncDatabase()
 }
 
 func main() {
@@ -31,10 +32,13 @@ func main() {
 	})
 
 	// Post route for adding products
-	router.POST("/add", routes.AddProducts)
+	router.POST("/add", controller.AddProducts)
 
 	//GET route for getting all products
-	router.GET("/products", routes.GetProducts)
+	router.GET("/products", controller.GetProducts)
+
+	//Post signup for creating the new user
+	router.POST("/signup", controller.Signup)
 
 	// Run the server on port 3000
 	router.Run()
