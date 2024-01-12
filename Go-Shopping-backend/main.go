@@ -3,6 +3,8 @@ package main
 import (
 	"Go-Shopping-backend/controller"
 	"Go-Shopping-backend/initializers"
+	"Go-Shopping-backend/middleware"
+	"net/http"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -23,12 +25,10 @@ func main() {
 	config.AllowOrigins = []string{"http://localhost:5173"} // specify the origins you want to allow
 	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE"}
 	router.Use(cors.New(config))
-
+	router.LoadHTMLGlob("views/*")
 	// Define a route
 	router.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Hello, Gin!",
-		})
+		c.HTML(http.StatusOK, "index.html", nil)
 	})
 
 	// Post route for adding products
@@ -39,6 +39,15 @@ func main() {
 
 	//Post signup for creating the new user
 	router.POST("/signup", controller.Signup)
+
+	//Post Login for User Authentication
+	router.POST("/login", controller.Login)
+
+	router.GET("/data", middleware.Authenticate, func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{
+			"name": "Akash",
+		})
+	})
 
 	// Run the server on port 3000
 	router.Run()
