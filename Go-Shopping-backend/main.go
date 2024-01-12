@@ -6,7 +6,7 @@ import (
 	"Go-Shopping-backend/middleware"
 	"net/http"
 
-	"github.com/gin-contrib/cors"
+	// "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,11 +20,12 @@ func main() {
 	// Create a new Gin router
 	router := gin.Default()
 
-	// Cors config
-	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:5173"} // specify the origins you want to allow
-	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE"}
-	router.Use(cors.New(config))
+	// // Cors config
+	// config := cors.DefaultConfig()
+	// config.AllowOrigins = []string{"http://localhost:5173"} // specify the origins you want to allow
+	// config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE"}
+	// router.Use(cors.New(config))
+
 	router.LoadHTMLGlob("views/*")
 	// Define a route
 	router.GET("/", func(c *gin.Context) {
