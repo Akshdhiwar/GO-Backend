@@ -4,6 +4,7 @@ import (
 	"Go-Shopping-backend/controller"
 	"Go-Shopping-backend/initializers"
 	"Go-Shopping-backend/middleware"
+	"Go-Shopping-backend/models"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,8 +16,6 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
-
-var DB *gorm.DB
 
 func init() {
 
@@ -43,12 +42,13 @@ func init() {
 
 	var err error
 
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	initializers.DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	initializers.SyncDatabase()
+
+	initializers.DB.AutoMigrate(&models.User{})
 
 }
 
