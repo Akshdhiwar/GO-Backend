@@ -1,6 +1,7 @@
 package initializers
 
 import (
+	"log"
 	"os"
 
 	"gorm.io/driver/postgres"
@@ -10,13 +11,20 @@ import (
 var DB *gorm.DB
 
 func ConnectToDB() {
+	dsn := os.Getenv("RAILS_DB")
+
+	if dsn == "" {
+		log.Fatal("RAILS_DB environment variable is empty")
+	}
 
 	var err error
-
-	dsn := os.Getenv("RAILS_DB")
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
-		panic("Failed to connect to database")
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
+
+	// Optional: Set connection pool settings if needed
+	// DB.DB().SetMaxIdleConns(10)
+	// DB.DB().SetMaxOpenConns(100)
 }
