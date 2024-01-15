@@ -5,6 +5,7 @@ import (
 	"Go-Shopping-backend/initializers"
 	"Go-Shopping-backend/middleware"
 	"net/http"
+	"os"
 
 	// "github.com/gin-contrib/cors"
 	"github.com/gin-contrib/cors"
@@ -12,9 +13,15 @@ import (
 )
 
 func init() {
-	initializers.LoadEnvVariables()
-	initializers.ConnectToDB()
-	initializers.SyncDatabase()
+
+	// only load the .env file when running locally
+	// check for a RAILWAY_ENVIRONMENT, if not found, code is running locally
+	if _, exists := os.LookupEnv("RAILWAY_ENVIRONMENT"); exists == false {
+		initializers.LoadEnvVariables()
+		initializers.ConnectToDB()
+		initializers.SyncDatabase()
+	}
+
 }
 
 func main() {
