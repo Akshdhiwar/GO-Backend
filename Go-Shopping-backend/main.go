@@ -18,9 +18,10 @@ func init() {
 	// check for a RAILWAY_ENVIRONMENT, if not found, code is running locally
 	if _, exists := os.LookupEnv("RAILWAY_ENVIRONMENT"); exists == false {
 		initializers.LoadEnvVariables()
-		initializers.ConnectToDB()
-		initializers.SyncDatabase()
 	}
+
+	initializers.ConnectToDB()
+	initializers.SyncDatabase()
 
 }
 
