@@ -22,6 +22,7 @@ func ConnectToDB() {
 	dsn := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
 		dbUser, dbPassword, dbName, dbHost, dbPort)
 
+	fmt.Println(dsn)
 	if dsn == "" {
 		log.Fatal("RAILS_DB environment variable is empty")
 	}
