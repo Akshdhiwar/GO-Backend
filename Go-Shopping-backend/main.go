@@ -58,7 +58,7 @@ func main() {
 
 	// // Cors config
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:5173"} // specify the origins you want to allow
+	config.AllowOrigins = []string{"http://localhost:5173/"} // specify the origins you want to allow
 	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE"}
 	router.Use(cors.New(config))
 
