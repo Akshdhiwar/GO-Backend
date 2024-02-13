@@ -30,6 +30,15 @@ func Signup(context *gin.Context) {
 		return
 	}
 
+	var users models.User
+	initializers.DB.First(&users, "email = ?", body.Email)
+
+	if users.ID != 0 {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"message": "User already present please login",
+		})
+		return
+	}
 	// hashing the password
 	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
 
