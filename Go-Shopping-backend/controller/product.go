@@ -74,3 +74,30 @@ func AddProducts(context *gin.Context) {
 		"message": "Products successfully received",
 	})
 }
+
+func GetSingleProduct(context *gin.Context) {
+
+	id := context.Param("id")
+
+	var product models.Product
+
+	result := initializers.DB.First(&product, id)
+
+	if result.Error != nil {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"message": "Error querying product from database",
+		})
+		return
+	}
+
+	// If no product found with the given id
+	if result.RowsAffected == 0 {
+		context.JSON(http.StatusNotFound, gin.H{
+			"message": "No product found",
+		})
+		return
+	}
+
+	context.JSON(http.StatusOK, product)
+
+}

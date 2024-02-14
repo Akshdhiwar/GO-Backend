@@ -13,4 +13,7 @@ func ProductRoutes(router *gin.RouterGroup) {
 
 	//GET route for getting all products
 	router.GET("/", controller.GetProducts)
+
+	//Get route for getting single product through ID.
+	router.GET("/:id", controller.GetSingleProduct)
 }
