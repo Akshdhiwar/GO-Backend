@@ -34,4 +34,7 @@ func ConnectToDB() {
 	}
 
 	DB.AutoMigrate(&models.User{})
+	fmt.Println("user table created")
+	DB.AutoMigrate(&models.Product{})
+	fmt.Println("Product table created")
 }
