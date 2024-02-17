@@ -14,7 +14,7 @@ func GetProducts(context *gin.Context) {
 
 	if result.Error != nil {
 		context.JSON(http.StatusBadRequest, gin.H{
-			"message": "Error querying products from database",
+			"message": "No Product found for given id.",
 		})
 		return
 	}
