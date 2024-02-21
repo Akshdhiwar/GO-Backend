@@ -34,7 +34,7 @@ func main() {
 	api.AccountRoutes(router.Group("api/v1/account"))
 
 	// api route for Products like add , get, update , delete
-	api.ProductRoutes(router.Group("api/v1/product"))
+	api.ProductRoutes(router.Group("api/v1/products"))
 
 	// Run the server on port 3000
 	router.Run()
