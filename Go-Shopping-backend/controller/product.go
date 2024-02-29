@@ -3,18 +3,49 @@ package controller
 import (
 	"Go-Shopping-backend/initializers"
 	"Go-Shopping-backend/models"
+	"encoding/json"
+	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func GetProducts(context *gin.Context) {
 	var products []models.Product
-	result := initializers.DB.Find(&products)
 
+	keys, err := initializers.RedisClient.Keys("product:*").Result()
+	if err != nil {
+		log.Printf("Failed to retrieve products from Redis")
+	}
+
+	for _, key := range keys {
+		val, err := initializers.RedisClient.Get(key).Result()
+		if err != nil {
+			log.Printf("Error retrieving product with key %s: %v", key, err)
+			continue
+		}
+
+		var product models.Product
+		if err := json.Unmarshal([]byte(val), &product); err != nil {
+			log.Printf("Error decoding product with key %s: %v", key, err)
+			continue
+		}
+		products = append(products, product)
+	}
+
+	if len(products) > 0 {
+		context.JSON(http.StatusOK, products)
+		return
+	}
+
+	// Key "products" doesn't exist in Redis
+	// Fetch products from DB
+
+	result := initializers.DB.Find(&products)
 	if result.Error != nil {
 		context.JSON(http.StatusBadRequest, gin.H{
-			"message": "No Product found for given id.",
+			"message": "Error fetching products from DB: " + result.Error.Error(),
 		})
 		return
 	}
@@ -26,7 +57,38 @@ func GetProducts(context *gin.Context) {
 		return
 	}
 
+	// Set products in Redis
+	err = SetProductsInRedis(products)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error setting products in Redis: " + err.Error(),
+		})
+		return
+	}
+
 	context.JSON(http.StatusOK, products)
+}
+
+func SetProductsInRedis(products []models.Product) error {
+	// Set products in Redis
+
+	for _, product := range products {
+		// Convert product to JSON
+		productJSON, err := json.Marshal(product)
+		if err != nil {
+			log.Printf("Error marshaling product: %v", err)
+			continue
+		}
+
+		// Set product in Redis with key in the format "product:id"
+		key := "product:" + strconv.Itoa(int(product.ID))
+		err = initializers.RedisClient.Set(key, productJSON, 0).Err()
+		if err != nil {
+			log.Printf("Error setting product in Redis: %v", err)
+		}
+	}
+
+	return nil
 }
 
 func AddProducts(context *gin.Context) {
@@ -73,6 +135,23 @@ func AddProducts(context *gin.Context) {
 		"status":  "success",
 		"message": "Products successfully received",
 	})
+
+	var newlyAddedProduct models.Product
+	initializers.DB.First(&newlyAddedProduct, "title = ?", body.Title)
+
+	// Convert product to JSON
+	productJSON, err := json.Marshal(newlyAddedProduct)
+	if err != nil {
+		log.Printf("Error marshaling product: %v", err)
+	}
+
+	// Set product in Redis with key in the format "product:id"
+	key := "product:" + strconv.Itoa(int(newlyAddedProduct.ID))
+	err = initializers.RedisClient.Set(key, productJSON, 0).Err()
+	if err != nil {
+		log.Printf("Error setting product in Redis: %v", err)
+	}
+
 }
 
 func GetSingleProduct(context *gin.Context) {
@@ -80,6 +159,28 @@ func GetSingleProduct(context *gin.Context) {
 	id := context.Param("id")
 
 	var product models.Product
+
+	key := "product:" + id
+
+	exists, err := initializers.RedisClient.Exists(key).Result()
+
+	if err != nil {
+		panic(err)
+	}
+
+	if exists == 1 {
+		val, err := initializers.RedisClient.Get(key).Result()
+		if err != nil {
+			log.Printf("Error retrieving product with key %s: %v", key, err)
+		}
+
+		if err := json.Unmarshal([]byte(val), &product); err != nil {
+			log.Printf("Error decoding product with key %s: %v", key, err)
+		}
+
+		context.JSON(http.StatusOK, product)
+		return
+	}
 
 	result := initializers.DB.First(&product, id)
 
