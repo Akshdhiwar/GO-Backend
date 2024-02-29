@@ -4,7 +4,6 @@ import (
 	"Go-Shopping-backend/initializers"
 	"Go-Shopping-backend/models"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -20,7 +19,7 @@ func GetProducts(context *gin.Context) {
 		log.Printf("Failed to retrieve products from Redis")
 	}
 
-	fmt.Println(keys)
+	log.Println(keys)
 
 	for _, key := range keys {
 		val, err := initializers.RedisClient.Get(key).Result()
@@ -39,7 +38,7 @@ func GetProducts(context *gin.Context) {
 
 	if len(products) > 0 {
 		context.JSON(http.StatusOK, products)
-		fmt.Println("got product from redis")
+		log.Println("got product from redis")
 		return
 	}
 
@@ -76,7 +75,7 @@ func GetProducts(context *gin.Context) {
 func SetProductsInRedis(products []models.Product) error {
 	// Set products in Redis
 
-	fmt.Println("adding product to redis")
+	log.Println("adding product to redis")
 
 	for _, product := range products {
 		// Convert product to JSON

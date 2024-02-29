@@ -19,6 +19,7 @@ func ConnectToRedis() {
 			Password: "",               // No password
 			DB:       0,                // Use the default database
 		})
+		log.Println("getting redis from local")
 	} else {
 		redisURI := "rediss://default:AVNS_t8wcgwgg4bTR5XgKASZ@redis-1b64ca36-akashdhiwar3001-29ed.a.aivencloud.com:14101"
 		addr, err := redis.ParseURL(redisURI)
@@ -26,6 +27,7 @@ func ConnectToRedis() {
 			panic(err)
 		}
 		client = redis.NewClient(addr)
+		log.Println("getting redis from aiven")
 	}
 
 	log.Printf("From redis file")
