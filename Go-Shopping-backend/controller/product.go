@@ -20,6 +20,8 @@ func GetProducts(context *gin.Context) {
 		log.Printf("Failed to retrieve products from Redis")
 	}
 
+	fmt.Println(keys)
+
 	for _, key := range keys {
 		val, err := initializers.RedisClient.Get(key).Result()
 		if err != nil {
