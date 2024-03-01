@@ -23,7 +23,7 @@ func main() {
 	// Create a new Gin router
 	router := gin.Default()
 
-	//router.Use(utils.Cors())
+	router.Use(utils.Cors())
 	router.LoadHTMLGlob("views/*")
 
 	//default route
