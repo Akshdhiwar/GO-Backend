@@ -161,18 +161,21 @@ func AddProducts(context *gin.Context) {
 
 func GetSingleProduct(context *gin.Context) {
 
+	// getting id from url
 	id := context.Param("id")
 
 	var product models.Product
 
 	key := "product:" + id
 
+	// checking the product in redis server
 	exists, err := initializers.RedisClient.Exists(key).Result()
 
 	if err != nil {
 		panic(err)
 	}
 
+	// if product exists in redis server sendeing the product
 	if exists == 1 {
 		val, err := initializers.RedisClient.Get(key).Result()
 		if err != nil {
@@ -187,6 +190,7 @@ func GetSingleProduct(context *gin.Context) {
 		return
 	}
 
+	// if product is not found in redis the product will be retrieved from result
 	result := initializers.DB.First(&product, id)
 
 	if result.Error != nil {
@@ -205,5 +209,52 @@ func GetSingleProduct(context *gin.Context) {
 	}
 
 	context.JSON(http.StatusOK, product)
+
+}
+
+func DeleteProduct(context *gin.Context) {
+
+	// getting id from the url body
+	id := context.Param("id")
+
+	var product models.Product
+
+	// checking if product is present in database
+	result := initializers.DB.First(&product, id)
+
+	if result.Error != nil {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"message": "Error querying product from database",
+		})
+		return
+	}
+
+	// If no product found with the given id
+	if result.RowsAffected == 0 {
+		context.JSON(http.StatusNotFound, gin.H{
+			"message": "No product found",
+		})
+		return
+	}
+
+	key := "product:" + id
+	err := initializers.RedisClient.Del(key).Err()
+	if err != nil {
+		log.Fatalf("Error deleting key %s: %v", key, err)
+	}
+
+	// deleting the product from DB
+	result = initializers.DB.Delete(&product, id)
+
+	if result.Error != nil {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"message": "Error querying product from database",
+		})
+		return
+	}
+
+	context.JSON(http.StatusOK, gin.H{
+		"message": "Product Deleted successfully",
+	})
 
 }

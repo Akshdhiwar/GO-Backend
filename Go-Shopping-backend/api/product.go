@@ -16,4 +16,7 @@ func ProductRoutes(router *gin.RouterGroup) {
 
 	//Get route for getting single product through ID.
 	router.GET("/:id", controller.GetSingleProduct)
+
+	//Delete route for deleting product through ID.
+	router.DELETE("/:id", controller.DeleteProduct)
 }
