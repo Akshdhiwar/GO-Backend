@@ -12,8 +12,10 @@ import (
 )
 
 func GetProducts(context *gin.Context) {
+	// defining products array with product model
 	var products []models.Product
 
+	// getting the product from redis server
 	keys, err := initializers.RedisClient.Keys("product:*").Result()
 	if err != nil {
 		log.Printf("Failed to retrieve products from Redis")
@@ -21,6 +23,7 @@ func GetProducts(context *gin.Context) {
 
 	log.Println(keys)
 
+	// looping over keys to get all the products and appending it to products array
 	for _, key := range keys {
 		val, err := initializers.RedisClient.Get(key).Result()
 		if err != nil {
@@ -53,6 +56,7 @@ func GetProducts(context *gin.Context) {
 		return
 	}
 
+	// if no products were found than exit
 	if len(products) == 0 {
 		context.JSON(http.StatusNotFound, gin.H{
 			"message": "No products found",
@@ -107,8 +111,10 @@ func AddProducts(context *gin.Context) {
 		Image       string
 	}
 
+	// binding the body with variable
 	context.ShouldBind(&body)
 
+	// condition check for all fields are required
 	if body.Title == "" || body.Price == 0 || body.Image == "" || body.Category == "" || body.Description == "" {
 		context.JSON(http.StatusBadRequest, gin.H{
 			"message": "All fields are required",
@@ -117,6 +123,8 @@ func AddProducts(context *gin.Context) {
 	}
 
 	var product models.Product
+
+	// checking if title with same name is present or not
 	initializers.DB.First(&product, "title = ?", body.Title)
 
 	if product.Title == body.Title {
