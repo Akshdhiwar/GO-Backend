@@ -266,3 +266,75 @@ func DeleteProduct(context *gin.Context) {
 	})
 
 }
+
+func UpdateProduct(context *gin.Context) {
+	// Getting body
+	var body struct {
+		Title       string  `json:"title"`
+		Price       float64 `json:"price"`
+		Description string  `json:"description"`
+		Category    string  `json:"category"`
+		Image       string  `json:"image"`
+	}
+
+	// Binding the body with variable
+	if err := context.BindJSON(&body); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON"})
+		return
+	}
+
+	// Condition check for all fields being required
+	if body.Title == "" || body.Price == 0 || body.Image == "" || body.Category == "" || body.Description == "" {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "All fields are required"})
+		return
+	}
+
+	id := context.Param("id")
+
+	var product models.Product
+
+	// Find the product by ID
+	if err := initializers.DB.First(&product, id).Error; err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Product not found"})
+		return
+	}
+
+	// Check if a product with the same title exists (excluding the current product being updated)
+	var existingProduct models.Product
+	if err := initializers.DB.Where("title = ? AND id != ?", body.Title, id).First(&existingProduct).Error; err == nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Product already present. Please check Title, it matches with another product"})
+		return
+	}
+
+	// Update the product with data from the request body
+	product.Title = body.Title
+	product.Price = body.Price
+	product.Description = body.Description
+	product.Category = body.Category
+	product.Image = body.Image
+
+	// Save the updated product to the database
+	if err := initializers.DB.Save(&product).Error; err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to update product"})
+		return
+	}
+
+	// get updated product and add to redis
+	var updatedProduct models.Product
+	initializers.DB.First(&updatedProduct, id)
+
+	// Convert product to JSON
+	productJSON, err := json.Marshal(updatedProduct)
+	if err != nil {
+		log.Printf("Error marshaling product: %v", err)
+	}
+
+	// Set product in Redis with key in the format "product:id"
+	key := "product:" + strconv.Itoa(int(updatedProduct.ID))
+	err = initializers.RedisClient.Set(key, productJSON, 0).Err()
+	if err != nil {
+		log.Printf("Error setting product in Redis: %v", err)
+	}
+
+	context.JSON(http.StatusOK, gin.H{"message": "Product updated successfully"})
+}

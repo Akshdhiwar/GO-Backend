@@ -19,4 +19,7 @@ func ProductRoutes(router *gin.RouterGroup) {
 
 	//Delete route for deleting product through ID.
 	router.DELETE("/:id", controller.DeleteProduct)
+
+	//Update route for updating products
+	router.PUT("/:id", controller.UpdateProduct)
 }
