@@ -1,5 +1,5 @@
-# Start from the official Golang image
-FROM golang:latest AS build-stage
+# Start from a slim Golang image
+FROM golang:1.22-alpine AS build-stage
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
@@ -13,19 +13,17 @@ RUN go mod download
 # Copy the source code into the container
 COPY . .
 
-COPY views /app/views
+# Build the Go app with static linking
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 
-# Build the Go app
-RUN go build -o main .
+# Start a new stage from scratch
+FROM scratch AS release-stage
 
-FROM golang:latest AS release-stage
-
+# Set the Current Working Directory inside the container
 WORKDIR /
 
+# Copy the binary built in the previous stage
 COPY --from=build-stage /app/main /main
-
-# Copy the views directory from the build stage
-COPY --from=build-stage /app/views /views
 
 # Expose port 3000 to the outside world
 EXPOSE 3000
