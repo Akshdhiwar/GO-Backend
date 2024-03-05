@@ -2,6 +2,7 @@ package api
 
 import (
 	"Go-Shopping-backend/controller"
+	"Go-Shopping-backend/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -9,7 +10,7 @@ import (
 func ProductRoutes(router *gin.RouterGroup) {
 
 	// Post route for adding products
-	router.POST("/add", controller.AddProducts)
+	router.POST("/add", middleware.Authenticate, middleware.RoleBasedAuthorization, controller.AddProducts)
 
 	//GET route for getting all products
 	router.GET("/", controller.GetProducts)
@@ -18,8 +19,8 @@ func ProductRoutes(router *gin.RouterGroup) {
 	router.GET("/:id", controller.GetSingleProduct)
 
 	//Delete route for deleting product through ID.
-	router.DELETE("/:id", controller.DeleteProduct)
+	router.DELETE("/:id", middleware.Authenticate, middleware.RoleBasedAuthorization, controller.DeleteProduct)
 
 	//Update route for updating products
-	router.PUT("/:id", controller.UpdateProduct)
+	router.PUT("/:id", middleware.Authenticate, middleware.RoleBasedAuthorization, controller.UpdateProduct)
 }
