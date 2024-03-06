@@ -24,16 +24,20 @@ func main() {
 	router := gin.Default()
 
 	router.Use(utils.Cors())
-	router.LoadHTMLGlob("views/*")
+
+	baseRoute := "api/v1"
 
 	//default route
-	api.Default(router.Group("api/v1"))
+	api.Default(router.Group(baseRoute))
 
 	// api route for Signup and Login
-	api.AccountRoutes(router.Group("api/v1/account"))
+	api.AccountRoutes(router.Group(baseRoute + "/account"))
 
 	// api route for Products like add , get, update , delete
-	api.ProductRoutes(router.Group("api/v1/products"))
+	api.ProductRoutes(router.Group(baseRoute + "/products"))
+
+	// api route for Cart
+	api.CartRouter(router.Group(baseRoute + "/cart"))
 
 	// Run the server on port 3000
 	router.Run()

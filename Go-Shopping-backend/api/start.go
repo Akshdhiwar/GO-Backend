@@ -8,7 +8,9 @@ import (
 
 func Default(router *gin.RouterGroup) {
 	// just to check is server running or not
-	router.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", nil)
+	router.GET("/", func(context *gin.Context) {
+		context.JSON(http.StatusOK, gin.H{
+			"message": "Server is running",
+		})
 	})
 }
