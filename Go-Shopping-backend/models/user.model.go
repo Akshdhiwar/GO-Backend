@@ -8,5 +8,4 @@ type User struct {
 	Password string
 	Role     int  `gorm:"default:2"`
 	CartID   uint // Foreign key for the Cart
-	Cart     Cart // Cart relationship
 }

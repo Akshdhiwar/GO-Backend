@@ -21,7 +21,7 @@ func ConnectToRedis() {
 		})
 		log.Println("getting redis from local")
 	} else {
-		redisURI := "rediss://default:AVNS_t8wcgwgg4bTR5XgKASZ@redis-1b64ca36-akashdhiwar3001-29ed.a.aivencloud.com:14101"
+		redisURI := os.Getenv("RAILS_REDIS_URL")
 		addr, err := redis.ParseURL(redisURI)
 		if err != nil {
 			panic(err)
