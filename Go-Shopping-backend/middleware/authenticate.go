@@ -20,6 +20,7 @@ func Authenticate(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{
 			"message": "unauthorized",
 		})
+		context.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 

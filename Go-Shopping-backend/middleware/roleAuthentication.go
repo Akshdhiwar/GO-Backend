@@ -29,7 +29,7 @@ func RoleBasedAuthorization(context *gin.Context) {
 	// Check if user has the required role
 	if userRole != 1 {
 		context.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
-		context.Abort()
+		context.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
