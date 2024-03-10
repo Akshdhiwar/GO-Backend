@@ -65,7 +65,7 @@ func GetCart(context *gin.Context) {
 
 		var product models.Product
 		if err := json.Unmarshal([]byte(value), &product); err != nil {
-			log.Printf("Error decoding product with key %s: %v", ProductID, err.Error())
+			log.Printf("Error decoding product with key in redis")
 			continue
 		}
 
