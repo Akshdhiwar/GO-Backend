@@ -9,7 +9,7 @@ import (
 func CartRouter(router *gin.RouterGroup) {
 
 	// GET route to get the cart of specific user
-	// router.GET("/:id", controller.GetCart)
+	router.GET("/:id", controller.GetCart)
 
 	// POST route to add the product to cart from user
 	router.POST("/add", controller.AddProductToCart)

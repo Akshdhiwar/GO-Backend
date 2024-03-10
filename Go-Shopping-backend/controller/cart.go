@@ -20,12 +20,26 @@ func GetCart(context *gin.Context) {
 
 	var cart models.Cart
 
-	result := initializers.DB.Find(&cart, "user_id =?", id)
+	rows, err := initializers.DB.Raw("SELECT products FROM carts WHERE user_id = ?", id).Rows()
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Failed to retrieve cart"})
+		return
+	}
+	defer rows.Close()
 
-	if result.Error != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"message": "Error querying cart from database",
-		})
+	for rows.Next() {
+		// Scan the array directly into the slice of int32
+		var productsArray pq.Int32Array
+		if err := rows.Scan(&productsArray); err != nil {
+			context.JSON(http.StatusBadRequest, gin.H{"message": "Failed to scan cart data"})
+			return
+		}
+
+		// Convert pq.Int32Array to []int32
+		cart.Products = []int32(productsArray)
+	}
+	if err := rows.Err(); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Error occurred while retrieving cart data"})
 		return
 	}
 
@@ -40,9 +54,12 @@ func GetCart(context *gin.Context) {
 	var products []models.Product
 
 	for _, ProductID := range cart.Products {
-		value, err := initializers.RedisClient.Get("product:" + strconv.Itoa(ProductID)).Result()
+		value, err := initializers.RedisClient.Get("product:" + strconv.Itoa(int(ProductID))).Result()
 		if err != nil {
-			log.Printf("Error retrieving product with key %s: %v", ProductID, err.Error())
+			var product models.Product
+
+			initializers.DB.First(&product, ProductID)
+			products = append(products, product)
 			continue
 		}
 
@@ -62,8 +79,8 @@ func GetCart(context *gin.Context) {
 func AddProductToCart(context *gin.Context) {
 
 	var body struct {
-		UserID    int `json:"user_id"`
-		ProductID int `json:"product_id"`
+		UserID    int   `json:"user_id"`
+		ProductID int32 `json:"product_id"`
 	}
 
 	err := context.Bind(&body)
@@ -100,7 +117,7 @@ func AddProductToCart(context *gin.Context) {
 		var cart models.Cart
 
 		cart.UserID = body.UserID
-		cart.Products = []int{body.ProductID}
+		cart.Products = []int32{body.ProductID}
 
 		result := initializers.DB.Exec("INSERT INTO carts (user_id, products, created_at, updated_at) VALUES ($1, $2 , $3 , $4)", body.UserID, pq.Array(cart.Products), time.Now(), time.Now())
 
@@ -119,19 +136,35 @@ func AddProductToCart(context *gin.Context) {
 		)
 	} else {
 
-		var cart models.Cart
+		var newcart models.Cart
 
-		// Retrieve cart from the database
-		if err := initializers.DB.First(&cart, "user_id = ?", body.UserID).Error; err != nil {
-			context.JSON(http.StatusBadRequest, gin.H{"message": "Error querying cart from database"})
+		// Use custom scan function to retrieve cart data
+		rows, err := initializers.DB.Raw("SELECT products FROM carts WHERE user_id = ?", body.UserID).Rows()
+		if err != nil {
+			context.JSON(http.StatusBadRequest, gin.H{"message": "Failed to retrieve cart"})
+			return
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			// Scan the array directly into the slice of int32
+			var productsArray pq.Int32Array
+			if err := rows.Scan(&productsArray); err != nil {
+				context.JSON(http.StatusBadRequest, gin.H{"message": "Failed to scan cart data"})
+				return
+			}
+
+			// Convert pq.Int32Array to []int32
+			newcart.Products = []int32(productsArray)
+		}
+		if err := rows.Err(); err != nil {
+			context.JSON(http.StatusBadRequest, gin.H{"message": "Error occurred while retrieving cart data"})
 			return
 		}
 
-		log.Println(cart.Products)
-
 		// Check if the product is already in the cart
 		found := false
-		for _, productID := range cart.Products {
+		for _, productID := range newcart.Products {
 			if productID == body.ProductID {
 				found = true
 				break
@@ -145,12 +178,13 @@ func AddProductToCart(context *gin.Context) {
 		}
 
 		// Add the product to the cart
-		cart.Products = append(cart.Products, body.ProductID)
-
-		log.Println(cart.Products)
+		newProducts := make([]int32, len(newcart.Products))
+		copy(newProducts, newcart.Products)
+		newProducts = append(newProducts, body.ProductID)
+		newcart.Products = newProducts
 
 		// Update the cart in the database
-		if err := initializers.DB.Model(&cart).Where("user_id = ?", body.UserID).Updates(map[string]interface{}{"products": cart.Products, "updated_at": time.Now()}).Error; err != nil {
+		if err := initializers.DB.Model(&newcart).Where("user_id = ?", body.UserID).Updates(map[string]interface{}{"products": pq.Array(newcart.Products), "updated_at": time.Now(), "user_id": body.UserID}).Error; err != nil {
 			context.JSON(http.StatusBadRequest, gin.H{"message": "Failed to update cart"})
 			return
 		}
