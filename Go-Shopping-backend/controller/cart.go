@@ -7,10 +7,10 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,14 +29,14 @@ func GetCart(context *gin.Context) {
 
 	for rows.Next() {
 		// Scan the array directly into the slice of int32
-		var productsArray pq.Int32Array
+		var productsArray pq.StringArray
 		if err := rows.Scan(&productsArray); err != nil {
 			context.JSON(http.StatusBadRequest, gin.H{"message": "Failed to scan cart data"})
 			return
 		}
 
 		// Convert pq.Int32Array to []int32
-		cart.Products = []int32(productsArray)
+		cart.Products = []string(productsArray)
 	}
 	if err := rows.Err(); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "Error occurred while retrieving cart data"})
@@ -54,7 +54,7 @@ func GetCart(context *gin.Context) {
 	var products []models.Product
 
 	for _, ProductID := range cart.Products {
-		value, err := initializers.RedisClient.Get("product:" + strconv.Itoa(int(ProductID))).Result()
+		value, err := initializers.RedisClient.Get("product:" + ProductID).Result()
 		if err != nil {
 			var product models.Product
 
@@ -79,8 +79,8 @@ func GetCart(context *gin.Context) {
 func AddProductToCart(context *gin.Context) {
 
 	var body struct {
-		UserID    int   `json:"user_id"`
-		ProductID int32 `json:"product_id"`
+		UserID    int    `json:"user_id"`
+		ProductID string `json:"product_id"`
 	}
 
 	err := context.Bind(&body)
@@ -91,9 +91,17 @@ func AddProductToCart(context *gin.Context) {
 		return
 	}
 
-	if body.ProductID == 0 || body.UserID == 0 {
+	if body.ProductID == "" || body.UserID == 0 {
 		context.JSON(http.StatusBadRequest, gin.H{
 			"message": "Product ID or User ID missing",
+		})
+		return
+	}
+
+	id, err := uuid.Parse(body.ProductID)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid product ID",
 		})
 		return
 	}
@@ -109,6 +117,17 @@ func AddProductToCart(context *gin.Context) {
 		return
 	}
 
+	var product models.Product
+
+	productResult := initializers.DB.First(&product, id)
+
+	if productResult.RowsAffected == 0 {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"message": "Product not found",
+		})
+		return
+	}
+
 	var cart models.Cart
 
 	cartResult := initializers.DB.First(&cart, "user_id = ?", body.UserID)
@@ -117,9 +136,9 @@ func AddProductToCart(context *gin.Context) {
 		var cart models.Cart
 
 		cart.UserID = body.UserID
-		cart.Products = []int32{body.ProductID}
+		cart.Products = []string{id.String()}
 
-		result := initializers.DB.Exec("INSERT INTO carts (user_id, products, created_at, updated_at) VALUES ($1, $2 , $3 , $4)", body.UserID, pq.Array(cart.Products), time.Now(), time.Now())
+		result := initializers.DB.Exec("INSERT INTO carts (user_id, products, created_at, updated_at) VALUES ($1, $2 , $3 , $4)", body.UserID, pq.StringArray(cart.Products), time.Now(), time.Now())
 
 		if result.Error != nil {
 			context.JSON(http.StatusBadRequest, gin.H{
@@ -148,14 +167,14 @@ func AddProductToCart(context *gin.Context) {
 
 		for rows.Next() {
 			// Scan the array directly into the slice of int32
-			var productsArray pq.Int32Array
+			var productsArray pq.StringArray
 			if err := rows.Scan(&productsArray); err != nil {
 				context.JSON(http.StatusBadRequest, gin.H{"message": "Failed to scan cart data"})
 				return
 			}
 
 			// Convert pq.Int32Array to []int32
-			newcart.Products = []int32(productsArray)
+			newcart.Products = []string(productsArray)
 		}
 		if err := rows.Err(); err != nil {
 			context.JSON(http.StatusBadRequest, gin.H{"message": "Error occurred while retrieving cart data"})
@@ -178,7 +197,7 @@ func AddProductToCart(context *gin.Context) {
 		}
 
 		// Add the product to the cart
-		newProducts := make([]int32, len(newcart.Products))
+		newProducts := make([]string, len(newcart.Products))
 		copy(newProducts, newcart.Products)
 		newProducts = append(newProducts, body.ProductID)
 		newcart.Products = newProducts

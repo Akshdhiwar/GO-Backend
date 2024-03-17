@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func GetProducts(context *gin.Context) {
@@ -90,7 +90,7 @@ func SetProductsInRedis(products []models.Product) error {
 		}
 
 		// Set product in Redis with key in the format "product:id"
-		key := "product:" + strconv.Itoa(int(product.ID))
+		key := "product:" + product.ID.String()
 		err = initializers.RedisClient.Set(key, productJSON, 0).Err()
 		if err != nil {
 			log.Printf("Error setting product in Redis: %v", err)
@@ -159,7 +159,7 @@ func AddProducts(context *gin.Context) {
 	}
 
 	// Set product in Redis with key in the format "product:id"
-	key := "product:" + strconv.Itoa(int(newlyAddedProduct.ID))
+	key := "product:" + newlyAddedProduct.ID.String()
 	err = initializers.RedisClient.Set(key, productJSON, 0).Err()
 	if err != nil {
 		log.Printf("Error setting product in Redis: %v", err)
@@ -223,7 +223,15 @@ func GetSingleProduct(context *gin.Context) {
 func DeleteProduct(context *gin.Context) {
 
 	// getting id from the url body
-	id := context.Param("id")
+	idStr := context.Param("id")
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid product id",
+		})
+		return
+	}
 
 	var product models.Product
 
@@ -245,9 +253,9 @@ func DeleteProduct(context *gin.Context) {
 		return
 	}
 
-	key := "product:" + id
-	err := initializers.RedisClient.Del(key).Err()
-	if err != nil {
+	key := "product:" + id.String()
+	delete := initializers.RedisClient.Del(key).Err()
+	if delete != nil {
 		log.Fatalf("Error deleting key %s: %v", key, err)
 	}
 
@@ -289,7 +297,16 @@ func UpdateProduct(context *gin.Context) {
 		return
 	}
 
-	id := context.Param("id")
+	idStr := context.Param("id")
+
+	// Parsing the UUID string from the URL parameter
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Invalid UUID"})
+		return
+	}
+
+	log.Println(id)
 
 	var product models.Product
 
@@ -330,7 +347,7 @@ func UpdateProduct(context *gin.Context) {
 	}
 
 	// Set product in Redis with key in the format "product:id"
-	key := "product:" + strconv.Itoa(int(updatedProduct.ID))
+	key := "product:" + updatedProduct.ID.String()
 	err = initializers.RedisClient.Set(key, productJSON, 0).Err()
 	if err != nil {
 		log.Printf("Error setting product in Redis: %v", err)
