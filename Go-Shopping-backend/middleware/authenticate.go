@@ -3,6 +3,7 @@ package middleware
 import (
 	"Go-Shopping-backend/initializers"
 	"Go-Shopping-backend/models"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,16 +12,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5"
 )
 
-func Authenticate(context *gin.Context) {
-	tokenString, err := context.Cookie("Authorization")
+func Authenticate(ctx *gin.Context) {
+	tokenString, err := ctx.Cookie("Authorization")
 
 	if err != nil {
-		context.JSON(http.StatusUnauthorized, gin.H{
+		ctx.JSON(http.StatusUnauthorized, gin.H{
 			"message": "unauthorized",
 		})
-		context.AbortWithStatus(http.StatusUnauthorized)
+		ctx.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
@@ -34,7 +36,7 @@ func Authenticate(context *gin.Context) {
 		return []byte(os.Getenv("JWTSECRET")), nil
 	})
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
+		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "internal server error",
 		})
 		log.Fatal(err)
@@ -42,32 +44,37 @@ func Authenticate(context *gin.Context) {
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok {
 		if float64(time.Now().Unix()) > claims["exp"].(float64) {
-			context.JSON(http.StatusUnauthorized, gin.H{
+			ctx.JSON(http.StatusUnauthorized, gin.H{
 				"message": "token expired",
 			})
 		}
 		var user models.User
 
-		if err := initializers.DB.First(&user, claims["sub"]).Error; err != nil {
-			context.JSON(http.StatusUnauthorized, gin.H{
-				"message": "invalid token",
-			})
+		err := initializers.DB.QueryRow(context.Background(), "SELECT * FROM users WHERE id = $1", claims["sub"]).Scan(&user.ID, &user.Email, &user.Password, &user.Role, &user.CartID)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				ctx.JSON(http.StatusUnauthorized, gin.H{"message": "invalid token"})
+				return
+			}
+			// Handle other errors if needed
+			ctx.JSON(http.StatusInternalServerError, gin.H{"message": "internal server error"})
+			return
 		}
 
 		if user.ID == 0 {
-			context.JSON(http.StatusUnauthorized, gin.H{
+			ctx.JSON(http.StatusUnauthorized, gin.H{
 				"message": "user not found",
 			})
 		}
 
-		context.Set("user", user)
-		context.Set("userEmail", user.Email)
+		ctx.Set("user", user)
+		ctx.Set("userEmail", user.Email)
 
-		context.Request.Header.Set("X-User-Email", user.Email)
+		ctx.Request.Header.Set("X-User-Email", user.Email)
 
-		context.Next()
+		ctx.Next()
 	} else {
-		context.JSON(http.StatusUnauthorized, gin.H{
+		ctx.JSON(http.StatusUnauthorized, gin.H{
 			"message": "unauthorized",
 		})
 	}

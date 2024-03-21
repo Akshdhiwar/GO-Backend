@@ -3,15 +3,17 @@ package controller
 import (
 	"Go-Shopping-backend/initializers"
 	"Go-Shopping-backend/models"
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
-func GetProducts(context *gin.Context) {
+func GetProducts(ctx *gin.Context) {
 	// defining products array with product model
 	var products []models.Product
 
@@ -40,25 +42,38 @@ func GetProducts(context *gin.Context) {
 	}
 
 	if len(products) > 0 {
-		context.JSON(http.StatusOK, products)
+		ctx.JSON(http.StatusOK, products)
 		log.Println("got product from redis")
 		return
 	}
 
 	// Key "products" doesn't exist in Redis
 	// Fetch products from DB
+	rows, err := initializers.DB.Query(context.Background(), "SELECT * FROM products")
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Error fetching products from DB: " + err.Error()})
+		return
+	}
+	defer rows.Close()
 
-	result := initializers.DB.Find(&products)
-	if result.Error != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"message": "Error fetching products from DB: " + result.Error.Error(),
-		})
+	for rows.Next() {
+		var product models.Product
+		if err := rows.Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt, &product.DeletedAt, &product.Title, &product.Price, &product.Description, &product.Category, &product.Image, &product.Rating, &product.Count); err != nil {
+			log.Printf("Error scanning product row: %v", err)
+			continue
+		}
+		products = append(products, product)
+	}
+
+	// Check for any errors encountered during iteration
+	if err := rows.Err(); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Error iterating product rows: " + err.Error()})
 		return
 	}
 
 	// if no products were found than exit
 	if len(products) == 0 {
-		context.JSON(http.StatusNotFound, gin.H{
+		ctx.JSON(http.StatusNotFound, gin.H{
 			"message": "No products found",
 		})
 		return
@@ -67,13 +82,13 @@ func GetProducts(context *gin.Context) {
 	// Set products in Redis
 	err = SetProductsInRedis(products)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
+		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Error setting products in Redis: " + err.Error(),
 		})
 		return
 	}
 
-	context.JSON(http.StatusOK, products)
+	ctx.JSON(http.StatusOK, products)
 }
 
 func SetProductsInRedis(products []models.Product) error {
@@ -100,7 +115,7 @@ func SetProductsInRedis(products []models.Product) error {
 	return nil
 }
 
-func AddProducts(context *gin.Context) {
+func AddProducts(ctx *gin.Context) {
 
 	//getting body
 	var body struct {
@@ -112,11 +127,11 @@ func AddProducts(context *gin.Context) {
 	}
 
 	// binding the body with variable
-	context.ShouldBind(&body)
+	ctx.ShouldBind(&body)
 
 	// condition check for all fields are required
 	if body.Title == "" || body.Price == 0 || body.Image == "" || body.Category == "" || body.Description == "" {
-		context.JSON(http.StatusBadRequest, gin.H{
+		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "All fields are required",
 		})
 		return
@@ -125,32 +140,48 @@ func AddProducts(context *gin.Context) {
 	var product models.Product
 
 	// checking if title with same name is present or not
-	initializers.DB.First(&product, "title = ?", body.Title)
+	var err error
+	err = initializers.DB.QueryRow(context.Background(), `
+		SELECT id, created_at, updated_at, deleted_at, title, price, description, category, image, rating, count
+		FROM products
+		WHERE title = $1
+		LIMIT 1
+	`, body.Title).Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt, &product.DeletedAt, &product.Title, &product.Price, &product.Description, &product.Category, &product.Image, &product.Rating, &product.Count)
+	if err == pgx.ErrNoRows {
+		log.Printf("No product with title '%s' found", body.Title)
+	}
 
 	if product.Title == body.Title {
-		context.JSON(http.StatusBadRequest, gin.H{
+		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Product already present please check Title. Title is matching with some other product",
 		})
 		return
 	}
 
 	newProduct := models.Product{Title: body.Title, Price: body.Price, Category: body.Category, Image: body.Image, Description: body.Description}
-	result := initializers.DB.Create(&newProduct)
-
-	if result.Error != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"message": "Unable to save product to db",
-		})
-		return
+	_, err = initializers.DB.Exec(context.Background(), `
+        INSERT INTO products ( title, price, category, image, description)
+        VALUES ($1, $2, $3, $4, $5)
+    `, newProduct.Title, newProduct.Price, newProduct.Category, newProduct.Image, newProduct.Description)
+	if err != nil {
+		log.Fatalf("Error creating new product: %v", err)
 	}
 
-	context.JSON(http.StatusOK, gin.H{
+	ctx.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "Products successfully received",
 	})
 
 	var newlyAddedProduct models.Product
-	initializers.DB.First(&newlyAddedProduct, "title = ?", body.Title)
+	err = initializers.DB.QueryRow(context.Background(), `
+	SELECT id, title, price, category, image, description
+	FROM products
+	WHERE title = $1
+	LIMIT 1
+`, body.Title).Scan(&newlyAddedProduct.ID, &newlyAddedProduct.Title, &newlyAddedProduct.Price, &newlyAddedProduct.Category, &newlyAddedProduct.Image, &newlyAddedProduct.Description)
+	if err != nil {
+		log.Fatalf("Error fetching product from DB: %v", err)
+	}
 
 	// Convert product to JSON
 	productJSON, err := json.Marshal(newlyAddedProduct)
@@ -167,10 +198,10 @@ func AddProducts(context *gin.Context) {
 
 }
 
-func GetSingleProduct(context *gin.Context) {
+func GetSingleProduct(ctx *gin.Context) {
 
 	// getting id from url
-	id := context.Param("id")
+	id := ctx.Param("id")
 
 	var product models.Product
 
@@ -194,40 +225,40 @@ func GetSingleProduct(context *gin.Context) {
 			log.Printf("Error decoding product with key %s: %v", key, err)
 		}
 
-		context.JSON(http.StatusOK, product)
+		ctx.JSON(http.StatusOK, product)
 		return
 	}
 
-	// if product is not found in redis the product will be retrieved from result
-	result := initializers.DB.First(&product, id)
-
-	if result.Error != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"message": "Error querying product from database",
+	err = initializers.DB.QueryRow(context.Background(), `
+		SELECT id, title, price, category, image, description
+		FROM products
+		WHERE id = $1
+	`, id).Scan(&product.ID, &product.Title, &product.Price, &product.Category, &product.Image, &product.Description)
+	if err == pgx.ErrNoRows {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "No product found",
+		})
+		return
+	}
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Error querying db",
 		})
 		return
 	}
 
-	// If no product found with the given id
-	if result.RowsAffected == 0 {
-		context.JSON(http.StatusNotFound, gin.H{
-			"message": "No product found",
-		})
-		return
-	}
-
-	context.JSON(http.StatusOK, product)
+	ctx.JSON(http.StatusOK, product)
 
 }
 
-func DeleteProduct(context *gin.Context) {
+func DeleteProduct(ctx *gin.Context) {
 
 	// getting id from the url body
-	idStr := context.Param("id")
+	idStr := ctx.Param("id")
 
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
+		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid product id",
 		})
 		return
@@ -235,20 +266,20 @@ func DeleteProduct(context *gin.Context) {
 
 	var product models.Product
 
-	// checking if product is present in database
-	result := initializers.DB.First(&product, id)
-
-	if result.Error != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"message": "Error querying product from database",
+	err = initializers.DB.QueryRow(context.Background(), `
+		SELECT id, title, price, category, image, description
+		FROM products
+		WHERE id = $1
+	`, id).Scan(&product.ID, &product.Title, &product.Price, &product.Category, &product.Image, &product.Description)
+	if err == pgx.ErrNoRows {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "No product found",
 		})
 		return
 	}
-
-	// If no product found with the given id
-	if result.RowsAffected == 0 {
-		context.JSON(http.StatusNotFound, gin.H{
-			"message": "No product found",
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Error querying db",
 		})
 		return
 	}
@@ -259,23 +290,25 @@ func DeleteProduct(context *gin.Context) {
 		log.Fatalf("Error deleting key %s: %v", key, err)
 	}
 
-	// deleting the product from DB
-	result = initializers.DB.Delete(&product, id)
-
-	if result.Error != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"message": "Error querying product from database",
+	// Delete the product from the database
+	_, err = initializers.DB.Exec(context.Background(), `
+	DELETE FROM products
+	WHERE id = $1
+`, id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Error deleting product from database",
 		})
 		return
 	}
 
-	context.JSON(http.StatusOK, gin.H{
+	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Product Deleted successfully",
 	})
 
 }
 
-func UpdateProduct(context *gin.Context) {
+func UpdateProduct(ctx *gin.Context) {
 	// Getting body
 	var body struct {
 		Title       string  `json:"title"`
@@ -286,23 +319,23 @@ func UpdateProduct(context *gin.Context) {
 	}
 
 	// Binding the body with variable
-	if err := context.BindJSON(&body); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON"})
+	if err := ctx.BindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON"})
 		return
 	}
 
 	// Condition check for all fields being required
 	if body.Title == "" || body.Price == 0 || body.Image == "" || body.Category == "" || body.Description == "" {
-		context.JSON(http.StatusBadRequest, gin.H{"message": "All fields are required"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "All fields are required"})
 		return
 	}
 
-	idStr := context.Param("id")
+	idStr := ctx.Param("id")
 
 	// Parsing the UUID string from the URL parameter
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"message": "Invalid UUID"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid UUID"})
 		return
 	}
 
@@ -311,15 +344,37 @@ func UpdateProduct(context *gin.Context) {
 	var product models.Product
 
 	// Find the product by ID
-	if err := initializers.DB.First(&product, id).Error; err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"message": "Product not found"})
+	err = initializers.DB.QueryRow(context.Background(), `
+		SELECT id, title, price, category, image, description
+		FROM products
+		WHERE id = $1
+	`, id).Scan(&product.ID, &product.Title, &product.Price, &product.Category, &product.Image, &product.Description)
+	if err == pgx.ErrNoRows {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "No product found",
+		})
+		return
+	}
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Error querying db",
+		})
 		return
 	}
 
 	// Check if a product with the same title exists (excluding the current product being updated)
 	var existingProduct models.Product
-	if err := initializers.DB.Where("title = ? AND id != ?", body.Title, id).First(&existingProduct).Error; err == nil {
-		context.JSON(http.StatusBadRequest, gin.H{"message": "Product already present. Please check Title, it matches with another product"})
+	err = initializers.DB.QueryRow(context.Background(), `
+		SELECT id
+		FROM products
+		WHERE title = $1 AND id != $2
+	`, body.Title, id).Scan(&existingProduct.ID)
+	if err == nil {
+		log.Println(err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Product already present. Please check Title, it matches with another product"})
+		return
+	} else if err != pgx.ErrNoRows {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Error querying db"})
 		return
 	}
 
@@ -331,14 +386,35 @@ func UpdateProduct(context *gin.Context) {
 	product.Image = body.Image
 
 	// Save the updated product to the database
-	if err := initializers.DB.Save(&product).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to update product"})
+	_, err = initializers.DB.Exec(context.Background(), `
+		UPDATE products
+		SET title = $1, price = $2, description = $3, category = $4, image = $5
+		WHERE id = $6
+	`, product.Title, product.Price, product.Description, product.Category, product.Image, id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to update product"})
 		return
 	}
 
 	// get updated product and add to redis
 	var updatedProduct models.Product
-	initializers.DB.First(&updatedProduct, id)
+	err = initializers.DB.QueryRow(context.Background(), `
+		SELECT id, title, price, category, image, description
+		FROM products
+		WHERE id = $1
+	`, id).Scan(&updatedProduct.ID, &updatedProduct.Title, &updatedProduct.Price, &updatedProduct.Category, &updatedProduct.Image, &updatedProduct.Description)
+	if err == pgx.ErrNoRows {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "No product found",
+		})
+		return
+	}
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Error querying db",
+		})
+		return
+	}
 
 	// Convert product to JSON
 	productJSON, err := json.Marshal(updatedProduct)
@@ -353,5 +429,5 @@ func UpdateProduct(context *gin.Context) {
 		log.Printf("Error setting product in Redis: %v", err)
 	}
 
-	context.JSON(http.StatusOK, gin.H{"message": "Product updated successfully"})
+	ctx.JSON(http.StatusOK, gin.H{"message": "Product updated successfully"})
 }

@@ -4,19 +4,19 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Product struct {
-	ID          uuid.UUID `gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	ID          uuid.UUID
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
-	DeletedAt   gorm.DeletedAt `gorm:"index"`
-	Title       string         `gorm:"unique" json:"title"`
-	Price       float64        `json:"price"`
-	Description string         `json:"description"`
-	Category    string         `json:"category"`
-	Image       string         `json:"image"`
-	Rating      float32        `json:"rate"`
-	Count       int            `json:"count"`
+	DeletedAt   pgtype.Timestamptz `db:"deleted_at"`
+	Title       string
+	Price       float64
+	Description string
+	Category    string
+	Image       string
+	Rating      float32
+	Count       int
 }

@@ -1,15 +1,20 @@
 package models
 
 import (
+	"time"
+
 	"github.com/google/uuid"
-	"gorm.io/gorm"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type User struct {
-	gorm.Model
-	Email    string `gorm:"unique"`
-	Password string
-	Role     int       `gorm:"default:2"`
-	CartID   uuid.UUID `gorm:"default:null"`
-	Cart     Cart      `gorm:"foreignKey:CartID"` // Define the relationship
+	ID        uint
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt pgtype.Timestamptz
+	Email     string
+	Password  string
+	Role      int
+	CartID    uuid.UUID
+	Cart      Cart
 }

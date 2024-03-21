@@ -2,49 +2,50 @@ package middleware
 
 import (
 	"Go-Shopping-backend/initializers"
-	"Go-Shopping-backend/models"
+	"context"
 	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
+	"github.com/jackc/pgx/v5"
 )
 
-func RoleBasedAuthorization(context *gin.Context) {
-	userEmail, _ := context.Get("userEmail")
+func RoleBasedAuthorization(ctx *gin.Context) {
+	userEmail, _ := ctx.Get("userEmail")
 	if userEmail == nil {
-		context.JSON(http.StatusUnauthorized, gin.H{"error": "User email not found in context"})
-		context.Abort()
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User email not found in context"})
+		ctx.Abort()
 		return
 	}
 
 	// Retrieve user role from database based on email
 	userRole, err := GetUserRoleByEmail(userEmail.(string)) // Assuming you have a function to fetch user role from the database based on email
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user role"})
-		context.Abort()
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user role"})
+		ctx.Abort()
 		return
 	}
 
 	// Check if user has the required role
 	if userRole != 1 {
-		context.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
-		context.AbortWithStatus(http.StatusUnauthorized)
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+		ctx.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
 	// Call the next handler
-	context.Next()
+	ctx.Next()
 }
 
 // GetUserRoleByEmail retrieves the role of a user by email from the database
 func GetUserRoleByEmail(email string) (int, error) {
-	var user models.User
-	if err := initializers.DB.Where("email = ?", email).First(&user).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+	var role int
+	err := initializers.DB.QueryRow(context.Background(), "SELECT role FROM users WHERE email = $1", email).Scan(&role)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, errors.New("user not found")
 		}
 		return 0, err
 	}
-	return user.Role, nil
+	return role, nil
 }

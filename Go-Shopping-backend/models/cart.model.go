@@ -4,15 +4,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
-	"gorm.io/gorm"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Cart struct {
-	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	ID        uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	DeletedAt pgtype.Timestamptz `db:"deleted_at"`
 	UserID    int
-	Products  pq.StringArray `gorm:"type:uuid[]" json:"-"`
+	Products  []string
 }
