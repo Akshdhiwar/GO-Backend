@@ -59,7 +59,7 @@ func Signup(ctx *gin.Context) {
         VALUES ($1, $2)
     `
 	// Execute the SQL query
-	_, err = initializers.DB.Exec(ctx, query, user.Email, user.Password)
+	_, err = initializers.DB.Exec(context.Background(), query, user.Email, user.Password)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Unable to save user to db",
