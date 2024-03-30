@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"Go-Shopping-backend/database"
 	"Go-Shopping-backend/initializers"
 	"Go-Shopping-backend/models"
 	"context"
@@ -33,7 +34,7 @@ func Signup(ctx *gin.Context) {
 	}
 
 	var users models.User
-	initializers.DB.QueryRow(context.Background(), "SELECT id FROM users WHERE email=$1", body.Email).Scan(&users.ID)
+	initializers.DB.QueryRow(context.Background(), database.SelectIdFromEmail, body.Email).Scan(&users.ID)
 	log.Println(users.ID)
 	if users.ID != 0 {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -53,13 +54,9 @@ func Signup(ctx *gin.Context) {
 
 	// storing the hash password and email in user object and saving it to DB
 	user := models.User{Email: body.Email, Password: string(hash)}
-	// Construct the SQL query for inserting a new user
-	query := `
-        INSERT INTO users (email, password)
-        VALUES ($1, $2)
-    `
+
 	// Execute the SQL query
-	_, err = initializers.DB.Exec(context.Background(), query, user.Email, user.Password)
+	_, err = initializers.DB.Exec(context.Background(), database.SaveUserPassword, user.Email, user.Password)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Unable to save user to db",
@@ -95,7 +92,7 @@ func Login(ctx *gin.Context) {
 	}
 
 	var users models.User
-	err := initializers.DB.QueryRow(context.Background(), "SELECT id , password FROM users WHERE email=$1", body.Email).Scan(&users.ID, &users.Password)
+	err := initializers.DB.QueryRow(context.Background(), database.SelectUserDetailsFromEmail, body.Email).Scan(&users.ID, &users.Password)
 
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
