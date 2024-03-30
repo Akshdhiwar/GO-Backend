@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"Go-Shopping-backend/database"
 	"Go-Shopping-backend/initializers"
 	"Go-Shopping-backend/models"
 	"context"
@@ -49,7 +50,7 @@ func GetProducts(ctx *gin.Context) {
 
 	// Key "products" doesn't exist in Redis
 	// Fetch products from DB
-	rows, err := initializers.DB.Query(context.Background(), "SELECT * FROM products")
+	rows, err := initializers.DB.Query(context.Background(), database.SelectAllProducts)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Error fetching products from DB: " + err.Error()})
 		return
@@ -141,15 +142,12 @@ func AddProducts(ctx *gin.Context) {
 
 	// checking if title with same name is present or not
 	var err error
-	err = initializers.DB.QueryRow(context.Background(), `
-		SELECT id, created_at, updated_at, deleted_at, title, price, description, category, image, rating, count
-		FROM products
-		WHERE title = $1
-		LIMIT 1
-	`, body.Title).Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt, &product.DeletedAt, &product.Title, &product.Price, &product.Description, &product.Category, &product.Image, &product.Rating, &product.Count)
+	err = initializers.DB.QueryRow(context.Background(), database.SelectProductDetailsFromTitle, body.Title).Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt, &product.Title, &product.Price, &product.Description, &product.Category, &product.Image, &product.Rating, &product.Count)
 	if err == pgx.ErrNoRows {
 		log.Printf("No product with title '%s' found", body.Title)
 	}
+
+	log.Println(product.Title, body.Title)
 
 	if product.Title == body.Title {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -159,10 +157,7 @@ func AddProducts(ctx *gin.Context) {
 	}
 
 	newProduct := models.Product{Title: body.Title, Price: body.Price, Category: body.Category, Image: body.Image, Description: body.Description}
-	_, err = initializers.DB.Exec(context.Background(), `
-        INSERT INTO products ( title, price, category, image, description, rating , count)
-        VALUES ($1, $2, $3, $4, $5 , $6 , $7)
-    `, newProduct.Title, newProduct.Price, newProduct.Category, newProduct.Image, newProduct.Description, 0, 0)
+	_, err = initializers.DB.Exec(context.Background(), database.SaveNewProduct, newProduct.Title, newProduct.Price, newProduct.Category, newProduct.Image, newProduct.Description, 0, 0)
 	if err != nil {
 		log.Fatalf("Error creating new product: %v", err)
 	}
@@ -173,12 +168,7 @@ func AddProducts(ctx *gin.Context) {
 	})
 
 	var newlyAddedProduct models.Product
-	err = initializers.DB.QueryRow(context.Background(), `
-	SELECT id, title, price, category, image, description
-	FROM products
-	WHERE title = $1
-	LIMIT 1
-`, body.Title).Scan(&newlyAddedProduct.ID, &newlyAddedProduct.Title, &newlyAddedProduct.Price, &newlyAddedProduct.Category, &newlyAddedProduct.Image, &newlyAddedProduct.Description)
+	err = initializers.DB.QueryRow(context.Background(), database.SelectProductDetailsFromTitle, body.Title).Scan(&newlyAddedProduct.ID, &newlyAddedProduct.CreatedAt, &newlyAddedProduct.UpdatedAt, &newlyAddedProduct.Title, &newlyAddedProduct.Price, &newlyAddedProduct.Description, &newlyAddedProduct.Category, &newlyAddedProduct.Image, &newlyAddedProduct.Rating, &newlyAddedProduct.Count)
 	if err != nil {
 		log.Fatalf("Error fetching product from DB: %v", err)
 	}
@@ -229,11 +219,7 @@ func GetSingleProduct(ctx *gin.Context) {
 		return
 	}
 
-	err = initializers.DB.QueryRow(context.Background(), `
-		SELECT id, title, price, category, image, description
-		FROM products
-		WHERE id = $1
-	`, id).Scan(&product.ID, &product.Title, &product.Price, &product.Category, &product.Image, &product.Description)
+	err = initializers.DB.QueryRow(context.Background(), database.SelectAllFromID, id).Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt, &product.Title, &product.Price, &product.Description, &product.Category, &product.Image, &product.Rating, &product.Count)
 	if err == pgx.ErrNoRows {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "No product found",
@@ -266,11 +252,7 @@ func DeleteProduct(ctx *gin.Context) {
 
 	var product models.Product
 
-	err = initializers.DB.QueryRow(context.Background(), `
-		SELECT id, title, price, category, image, description
-		FROM products
-		WHERE id = $1
-	`, id).Scan(&product.ID, &product.Title, &product.Price, &product.Category, &product.Image, &product.Description)
+	err = initializers.DB.QueryRow(context.Background(), database.SelectAllFromID, id).Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt, &product.Title, &product.Price, &product.Description, &product.Category, &product.Image, &product.Rating, &product.Count)
 	if err == pgx.ErrNoRows {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "No product found",
@@ -291,10 +273,7 @@ func DeleteProduct(ctx *gin.Context) {
 	}
 
 	// Delete the product from the database
-	_, err = initializers.DB.Exec(context.Background(), `
-	DELETE FROM products
-	WHERE id = $1
-`, id)
+	_, err = initializers.DB.Exec(context.Background(), database.DeleteProduct, id)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error deleting product from database",
@@ -344,11 +323,7 @@ func UpdateProduct(ctx *gin.Context) {
 	var product models.Product
 
 	// Find the product by ID
-	err = initializers.DB.QueryRow(context.Background(), `
-		SELECT id, title, price, category, image, description
-		FROM products
-		WHERE id = $1
-	`, id).Scan(&product.ID, &product.Title, &product.Price, &product.Category, &product.Image, &product.Description)
+	err = initializers.DB.QueryRow(context.Background(), database.SelectAllFromID, id).Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt, &product.Title, &product.Price, &product.Description, &product.Category, &product.Image, &product.Rating, &product.Count)
 	if err == pgx.ErrNoRows {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "No product found",
@@ -364,11 +339,7 @@ func UpdateProduct(ctx *gin.Context) {
 
 	// Check if a product with the same title exists (excluding the current product being updated)
 	var existingProduct models.Product
-	err = initializers.DB.QueryRow(context.Background(), `
-		SELECT id
-		FROM products
-		WHERE title = $1 AND id != $2
-	`, body.Title, id).Scan(&existingProduct.ID)
+	err = initializers.DB.QueryRow(context.Background(), database.SelectIdFromProductsMismatch, body.Title, id).Scan(&existingProduct.ID)
 	if err == nil {
 		log.Println(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Product already present. Please check Title, it matches with another product"})
@@ -386,11 +357,7 @@ func UpdateProduct(ctx *gin.Context) {
 	product.Image = body.Image
 
 	// Save the updated product to the database
-	_, err = initializers.DB.Exec(context.Background(), `
-		UPDATE products
-		SET title = $1, price = $2, description = $3, category = $4, image = $5
-		WHERE id = $6
-	`, product.Title, product.Price, product.Description, product.Category, product.Image, id)
+	_, err = initializers.DB.Exec(context.Background(), database.UpdateProduct, product.Title, product.Price, product.Description, product.Category, product.Image, id)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to update product"})
 		return
@@ -398,11 +365,7 @@ func UpdateProduct(ctx *gin.Context) {
 
 	// get updated product and add to redis
 	var updatedProduct models.Product
-	err = initializers.DB.QueryRow(context.Background(), `
-		SELECT id, title, price, category, image, description
-		FROM products
-		WHERE id = $1
-	`, id).Scan(&updatedProduct.ID, &updatedProduct.Title, &updatedProduct.Price, &updatedProduct.Category, &updatedProduct.Image, &updatedProduct.Description)
+	err = initializers.DB.QueryRow(context.Background(), database.SelectAllFromID, id).Scan(&updatedProduct.ID, &updatedProduct.CreatedAt, &updatedProduct.UpdatedAt, &updatedProduct.Title, &updatedProduct.Price, &updatedProduct.Description, &updatedProduct.Category, &updatedProduct.Image, &updatedProduct.Rating, &updatedProduct.Count)
 	if err == pgx.ErrNoRows {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "No product found",
