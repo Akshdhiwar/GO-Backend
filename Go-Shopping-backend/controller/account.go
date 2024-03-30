@@ -34,7 +34,7 @@ func Signup(ctx *gin.Context) {
 	}
 
 	var users models.User
-	initializers.DB.QueryRow(context.Background(), database.SelectIdFromEmail, body.Email).Scan(&users.ID)
+	initializers.DB.QueryRow(context.Background(), database.SelectUserIdFromEmail, body.Email).Scan(&users.ID)
 	log.Println(users.ID)
 	if users.ID != 0 {
 		ctx.JSON(http.StatusBadRequest, gin.H{

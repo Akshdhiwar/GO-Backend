@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"Go-Shopping-backend/database"
 	"Go-Shopping-backend/initializers"
 	"Go-Shopping-backend/models"
 	"context"
@@ -48,7 +49,7 @@ func AddProductToCart(ctx *gin.Context) {
 
 	var user models.User
 
-	err = initializers.DB.QueryRow(context.Background(), "SELECT id FROM users WHERE id=$1", body.UserID).Scan(&user.ID)
+	err = initializers.DB.QueryRow(context.Background(), database.SelectUserIdFromID, body.UserID).Scan(&user.ID)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error querying user from database",
@@ -58,7 +59,7 @@ func AddProductToCart(ctx *gin.Context) {
 
 	var product models.Product
 
-	row := initializers.DB.QueryRow(context.Background(), "SELECT id FROM products WHERE id = $1", id)
+	row := initializers.DB.QueryRow(context.Background(), database.SelectProductIdFromId, id)
 
 	err = row.Scan(&product.ID)
 
@@ -77,7 +78,7 @@ func AddProductToCart(ctx *gin.Context) {
 
 	var cart models.Cart
 
-	row = initializers.DB.QueryRow(context.Background(), "SELECT id FROM carts WHERE user_id=$1", body.UserID)
+	row = initializers.DB.QueryRow(context.Background(), database.SelectCartIdFromUserId, body.UserID)
 
 	err = row.Scan(&cart.ID)
 	if err == pgx.ErrNoRows {
@@ -87,7 +88,7 @@ func AddProductToCart(ctx *gin.Context) {
 		cart.UserID = body.UserID
 		cart.Products = []string{id.String()}
 
-		_, err := initializers.DB.Exec(context.Background(), "INSERT INTO carts (user_id, products, created_at, updated_at) VALUES ($1, $2 , $3 , $4)", body.UserID, cart.Products, time.Now(), time.Now())
+		_, err := initializers.DB.Exec(context.Background(), database.SaveCart, body.UserID, cart.Products, time.Now(), time.Now())
 
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{
@@ -97,7 +98,7 @@ func AddProductToCart(ctx *gin.Context) {
 		}
 
 		var cartID uuid.UUID
-		err = initializers.DB.QueryRow(context.Background(), "SELECT id FROM carts WHERE user_id=$1", body.UserID).Scan(&cartID)
+		err = initializers.DB.QueryRow(context.Background(), database.SelectCartIdFromUserId, body.UserID).Scan(&cartID)
 
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{
@@ -106,7 +107,7 @@ func AddProductToCart(ctx *gin.Context) {
 			return
 		}
 
-		_, err = initializers.DB.Exec(context.Background(), "UPDATE users SET cart_id=$1 WHERE id=$2", cartID, body.UserID)
+		_, err = initializers.DB.Exec(context.Background(), database.UpdateCartId, cartID, body.UserID)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"message": "Failed to update user cart id",
@@ -125,7 +126,7 @@ func AddProductToCart(ctx *gin.Context) {
 
 		var newcart models.Cart
 
-		err := initializers.DB.QueryRow(context.Background(), "SELECT products , user_id FROM carts WHERE user_id = $1", body.UserID).Scan(&newcart.Products, &newcart.UserID)
+		err := initializers.DB.QueryRow(context.Background(), database.SelectCartDetailsFromUserId, body.UserID).Scan(&newcart.Products, &newcart.UserID)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to retrieve cart"})
 			return
@@ -154,14 +155,8 @@ func AddProductToCart(ctx *gin.Context) {
 		newProducts = append(newProducts, body.ProductID)
 		newcart.Products = newProducts
 
-		// Update the cart in the database
-		query := `
-        UPDATE carts 
-        SET products = $1, updated_at = $2 
-        WHERE user_id = $3
-    `
 		// Execute the SQL query
-		_, err = initializers.DB.Exec(context.Background(), query, newcart.Products, time.Now(), newcart.UserID)
+		_, err = initializers.DB.Exec(context.Background(), database.UpdateCart, newcart.Products, time.Now(), newcart.UserID)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to update cart"})
 			return
@@ -179,7 +174,7 @@ func GetCart(ctx *gin.Context) {
 
 	var isCartIDPresent sql.NullString
 
-	err := initializers.DB.QueryRow(context.Background(), "SELECT cart_id FROM users WHERE id = $1", id).Scan(&isCartIDPresent)
+	err := initializers.DB.QueryRow(context.Background(), database.SelectCartIdFromId, id).Scan(&isCartIDPresent)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error querying user from database",
@@ -197,7 +192,7 @@ func GetCart(ctx *gin.Context) {
 
 	var cart models.Cart
 
-	err = initializers.DB.QueryRow(context.Background(), "SELECT products FROM carts WHERE user_id = $1", id).Scan(&cart.Products)
+	err = initializers.DB.QueryRow(context.Background(), database.SelectProductsFromUserID, id).Scan(&cart.Products)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to retrieve cart"})
 		return
@@ -218,7 +213,7 @@ func GetCart(ctx *gin.Context) {
 		if err != nil {
 			var product models.Product
 
-			err := initializers.DB.QueryRow(context.Background(), "SELECT * FROM products WHERE id=$1", productID).Scan(&product)
+			err := initializers.DB.QueryRow(context.Background(), database.SelectAllFromID, productID).Scan(&product)
 			if err != nil {
 				log.Printf("Error querying product from database: %v", err)
 				continue
@@ -270,7 +265,7 @@ func DeleteProductFromCart(ctx *gin.Context) {
 
 	var products []uuid.UUID
 
-	err = initializers.DB.QueryRow(context.Background(), "SELECT products FROM carts WHERE user_id = $1", body.UserID).Scan(&products)
+	err = initializers.DB.QueryRow(context.Background(), database.SelectProductsFromUserID, body.UserID).Scan(&products)
 
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -286,7 +281,7 @@ func DeleteProductFromCart(ctx *gin.Context) {
 		}
 	}
 
-	_, err = initializers.DB.Exec(context.Background(), "UPDATE carts SET products = $1 WHERE user_id = $2", products, body.UserID)
+	_, err = initializers.DB.Exec(context.Background(), database.UpdateCartProductWhereUserId, products, body.UserID)
 
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{

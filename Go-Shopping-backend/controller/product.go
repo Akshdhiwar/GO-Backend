@@ -58,7 +58,7 @@ func GetProducts(ctx *gin.Context) {
 
 	for rows.Next() {
 		var product models.Product
-		if err := rows.Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt, &product.DeletedAt, &product.Title, &product.Price, &product.Description, &product.Category, &product.Image, &product.Rating, &product.Count); err != nil {
+		if err := rows.Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt, &product.DeletedAt, &product.Title, &product.Price, &product.Description, &product.Category, &product.Image); err != nil {
 			log.Printf("Error scanning product row: %v", err)
 			continue
 		}
@@ -160,9 +160,9 @@ func AddProducts(ctx *gin.Context) {
 
 	newProduct := models.Product{Title: body.Title, Price: body.Price, Category: body.Category, Image: body.Image, Description: body.Description}
 	_, err = initializers.DB.Exec(context.Background(), `
-        INSERT INTO products ( title, price, category, image, description)
-        VALUES ($1, $2, $3, $4, $5)
-    `, newProduct.Title, newProduct.Price, newProduct.Category, newProduct.Image, newProduct.Description)
+        INSERT INTO products ( title, price, category, image, description, rating , count)
+        VALUES ($1, $2, $3, $4, $5 , $6 , $7)
+    `, newProduct.Title, newProduct.Price, newProduct.Category, newProduct.Image, newProduct.Description, 0, 0)
 	if err != nil {
 		log.Fatalf("Error creating new product: %v", err)
 	}
