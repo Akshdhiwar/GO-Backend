@@ -4,6 +4,7 @@ import (
 	"Go-Shopping-backend/initializers"
 	"Go-Shopping-backend/models"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -175,9 +176,28 @@ func AddProductToCart(ctx *gin.Context) {
 func GetCart(ctx *gin.Context) {
 	id := ctx.Param("id")
 	log.Println(id)
+
+	var isCartIDPresent sql.NullString
+
+	err := initializers.DB.QueryRow(context.Background(), "SELECT cart_id FROM users WHERE id = $1", id).Scan(&isCartIDPresent)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Error querying user from database",
+		})
+		return
+	}
+	log.Println(isCartIDPresent)
+
+	if !isCartIDPresent.Valid {
+		ctx.JSON(http.StatusOK, gin.H{
+			"message": "No products in cart",
+		})
+		return
+	}
+
 	var cart models.Cart
 
-	err := initializers.DB.QueryRow(context.Background(), "SELECT products FROM carts WHERE user_id = $1", id).Scan(&cart.Products)
+	err = initializers.DB.QueryRow(context.Background(), "SELECT products FROM carts WHERE user_id = $1", id).Scan(&cart.Products)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to retrieve cart"})
 		return
@@ -193,12 +213,16 @@ func GetCart(ctx *gin.Context) {
 
 	var products []models.Product
 
-	for _, ProductID := range cart.Products {
-		value, err := initializers.RedisClient.Get("product:" + ProductID).Result()
+	for _, productID := range cart.Products {
+		value, err := initializers.RedisClient.Get("product:" + productID).Result()
 		if err != nil {
 			var product models.Product
 
-			initializers.DB.QueryRow(context.Background(), "SELECT * FROM products WHERE id=$1", ProductID).Scan(&product)
+			err := initializers.DB.QueryRow(context.Background(), "SELECT * FROM products WHERE id=$1", productID).Scan(&product)
+			if err != nil {
+				log.Printf("Error querying product from database: %v", err)
+				continue
+			}
 
 			products = append(products, product)
 			continue
@@ -206,11 +230,73 @@ func GetCart(ctx *gin.Context) {
 
 		var product models.Product
 		if err := json.Unmarshal([]byte(value), &product); err != nil {
-			log.Printf("Error decoding product with key in redis")
+			log.Printf("Error decoding product with key in redis: %v", err)
 			continue
 		}
 
 		products = append(products, product)
 	}
 	ctx.JSON(http.StatusOK, products)
+}
+
+func DeleteProductFromCart(ctx *gin.Context) {
+
+	var productID = ctx.Param("id")
+
+	var body struct {
+		UserID int `json:"user_id"`
+	}
+
+	err := ctx.ShouldBind(&body)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Failed to Bind data",
+		})
+	}
+
+	if body.UserID == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "User ID missing or invalid",
+		})
+	}
+
+	_, err = uuid.Parse(productID)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid product ID",
+		})
+	}
+
+	var products []uuid.UUID
+
+	err = initializers.DB.QueryRow(context.Background(), "SELECT products FROM carts WHERE user_id = $1", body.UserID).Scan(&products)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Failed to retrieve cart",
+		})
+		return
+	}
+
+	for i, product := range products {
+		if product.String() == productID {
+			products = append(products[:i], products[i+1:]...)
+			break
+		}
+	}
+
+	_, err = initializers.DB.Exec(context.Background(), "UPDATE carts SET products = $1 WHERE user_id = $2", products, body.UserID)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Failed to update cart",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "Product removed from cart",
+	})
+
 }

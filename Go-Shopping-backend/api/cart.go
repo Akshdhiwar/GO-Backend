@@ -15,4 +15,7 @@ func CartRouter(router *gin.RouterGroup) {
 	// POST route to add the product to cart from user
 	router.POST("/add", middleware.Authenticate, controller.AddProductToCart)
 
+	// DELETE route to delete the product from cart from user
+	router.DELETE("/delete/:id", middleware.Authenticate, controller.DeleteProductFromCart)
+
 }
