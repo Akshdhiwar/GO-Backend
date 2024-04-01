@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -15,6 +16,23 @@ import (
 )
 
 func GetProducts(ctx *gin.Context) {
+
+	offset, err := strconv.Atoi(ctx.Query("offset"))
+	if err != nil || offset <= 0 {
+		offset = 0
+	}
+
+	limit, err := strconv.Atoi(ctx.Query("limit"))
+	if err != nil || limit <= 0 {
+		limit = 10
+	}
+
+	if limit > 20 {
+		limit = 20
+	}
+
+	offset = offset * limit
+
 	// defining products array with product model
 	var products []models.Product
 
@@ -50,7 +68,7 @@ func GetProducts(ctx *gin.Context) {
 
 	// Key "products" doesn't exist in Redis
 	// Fetch products from DB
-	rows, err := initializers.DB.Query(context.Background(), database.SelectAllProducts)
+	rows, err := initializers.DB.Query(context.Background(), database.SelectAllProducts, limit, offset)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Error fetching products from DB: " + err.Error()})
 		return
