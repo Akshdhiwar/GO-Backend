@@ -23,7 +23,8 @@ const (
 const (
 	SelectProductIdFromId         = "SELECT id FROM products WHERE id = $1"
 	SelectAllFromID               = "SELECT id , created_at , updated_at , title , price , category , description , image , rating , count FROM products WHERE id=$1"
-	SelectAllProducts             = "SELECT * FROM products LIMIT $1 OFFSET $2"
+	SelectAllProductsLimit        = "SELECT * FROM products LIMIT $1 OFFSET $2"
+	SelectAllProducts             = "SELECT * FROM products "
 	SelectProductDetailsFromTitle = ` SELECT id , created_at , updated_at , title , price , category , description , image , rating , count  FROM products WHERE title = $1 LIMIT 1`
 	SaveNewProduct                = ` INSERT INTO products ( title, price, category, image, description, rating , count) VALUES ($1, $2, $3, $4, $5 , $6 , $7)`
 	DeleteProduct                 = ` DELETE FROM products WHERE id = $1`

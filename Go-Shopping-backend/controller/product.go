@@ -68,7 +68,7 @@ func GetProducts(ctx *gin.Context) {
 
 	// Key "products" doesn't exist in Redis
 	// Fetch products from DB
-	rows, err := initializers.DB.Query(context.Background(), database.SelectAllProducts, limit, offset)
+	rows, err := initializers.DB.Query(context.Background(), database.SelectAllProductsLimit, limit, offset)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Error fetching products from DB: " + err.Error()})
 		return

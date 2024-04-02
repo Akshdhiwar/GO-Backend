@@ -17,6 +17,7 @@ func init() {
 	}
 	initializers.ConnectToDB()
 	initializers.ConnectToRedis()
+	initializers.LoadProductsToRedis()
 }
 
 func main() {
