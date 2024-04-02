@@ -22,6 +22,8 @@ func GetProducts(ctx *gin.Context) {
 		offset = 0
 	}
 
+	var originalOffset = offset
+
 	limit, err := strconv.Atoi(ctx.Query("limit"))
 	if err != nil || limit <= 0 {
 		limit = 10
@@ -43,6 +45,8 @@ func GetProducts(ctx *gin.Context) {
 	}
 
 	log.Println(keys)
+
+	keys = keys[offset : (limit*originalOffset)+5]
 
 	// looping over keys to get all the products and appending it to products array
 	for _, key := range keys {
