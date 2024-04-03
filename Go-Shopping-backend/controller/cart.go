@@ -85,8 +85,12 @@ func AddProductToCart(ctx *gin.Context) {
 		fmt.Println("in IF statement")
 		var cart models.Cart
 
+		var cartProducts models.CartProduct
+		cartProducts.ProductID = id
+		cartProducts.Quantity = 1
+
 		cart.UserID = body.UserID
-		cart.Products = []string{id.String()}
+		cart.Products = []models.CartProduct{cartProducts}
 
 		_, err := initializers.DB.Exec(context.Background(), database.SaveCart, body.UserID, cart.Products, time.Now(), time.Now())
 
@@ -136,8 +140,8 @@ func AddProductToCart(ctx *gin.Context) {
 
 		// Check if the product is already in the cart
 		found := false
-		for _, productID := range newcart.Products {
-			if productID == body.ProductID {
+		for _, product := range newcart.Products {
+			if product.ProductID.String() == body.ProductID {
 				found = true
 				break
 			}
@@ -150,9 +154,23 @@ func AddProductToCart(ctx *gin.Context) {
 		}
 
 		// Add the product to the cart
-		newProducts := make([]string, len(newcart.Products))
+		newProducts := make([]models.CartProduct, len(newcart.Products))
 		copy(newProducts, newcart.Products)
-		newProducts = append(newProducts, body.ProductID)
+
+		var newProductJSON models.CartProduct
+
+		productID, err := uuid.Parse(body.ProductID)
+
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": "Failed to parse UUID",
+			})
+		}
+
+		newProductJSON.ProductID = productID
+		newProductJSON.Quantity = 1
+
+		newProducts = append(newProducts, newProductJSON)
 		newcart.Products = newProducts
 
 		// Execute the SQL query
@@ -170,8 +188,6 @@ func AddProductToCart(ctx *gin.Context) {
 
 func GetCart(ctx *gin.Context) {
 	id := ctx.Param("id")
-	log.Println(id)
-
 	var isCartIDPresent sql.NullString
 
 	err := initializers.DB.QueryRow(context.Background(), database.SelectCartIdFromId, id).Scan(&isCartIDPresent)
@@ -181,7 +197,6 @@ func GetCart(ctx *gin.Context) {
 		})
 		return
 	}
-	log.Println(isCartIDPresent)
 
 	if !isCartIDPresent.Valid {
 		ctx.JSON(http.StatusOK, gin.H{
@@ -208,12 +223,13 @@ func GetCart(ctx *gin.Context) {
 
 	var products []models.Product
 
-	for _, productID := range cart.Products {
-		value, err := initializers.RedisClient.Get("product:" + productID).Result()
+	for _, product := range cart.Products {
+		id := product.ProductID
+		value, err := initializers.RedisClient.Get("product:" + product.ProductID.String()).Result()
 		if err != nil {
 			var product models.Product
 
-			err := initializers.DB.QueryRow(context.Background(), database.SelectAllFromID, productID).Scan(&product)
+			err := initializers.DB.QueryRow(context.Background(), database.SelectAllFromID, id).Scan(&product)
 			if err != nil {
 				log.Printf("Error querying product from database: %v", err)
 				continue
@@ -231,7 +247,9 @@ func GetCart(ctx *gin.Context) {
 
 		products = append(products, product)
 	}
+
 	ctx.JSON(http.StatusOK, products)
+
 }
 
 func DeleteProductFromCart(ctx *gin.Context) {
@@ -263,7 +281,7 @@ func DeleteProductFromCart(ctx *gin.Context) {
 		})
 	}
 
-	var products []uuid.UUID
+	var products []models.CartProduct
 
 	err = initializers.DB.QueryRow(context.Background(), database.SelectProductsFromUserID, body.UserID).Scan(&products)
 
@@ -275,7 +293,7 @@ func DeleteProductFromCart(ctx *gin.Context) {
 	}
 
 	for i, product := range products {
-		if product.String() == productID {
+		if (product.ProductID).String() == productID {
 			products = append(products[:i], products[i+1:]...)
 			break
 		}

@@ -13,5 +13,10 @@ type Cart struct {
 	UpdatedAt time.Time
 	DeletedAt pgtype.Timestamptz `db:"deleted_at"`
 	UserID    int
-	Products  []string
+	Products  []CartProduct
+}
+
+type CartProduct struct {
+	ProductID uuid.UUID
+	Quantity  int
 }

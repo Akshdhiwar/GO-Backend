@@ -81,7 +81,7 @@ func migration() {
             updated_at TIMESTAMPTZ DEFAULT now(),
             deleted_at TIMESTAMPTZ,
             user_id INTEGER,
-            products TEXT[] DEFAULT '{}'
+            products JSONB[] DEFAULT '{}'::JSONB[]
         )
     `)
 	if err != nil {
