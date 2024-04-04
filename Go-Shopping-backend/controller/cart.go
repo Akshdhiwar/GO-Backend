@@ -329,3 +329,150 @@ func DeleteProductFromCart(ctx *gin.Context) {
 	})
 
 }
+
+func AddQuantity(ctx *gin.Context) {
+
+	var body struct {
+		UserID int
+	}
+
+	err := ctx.ShouldBind(&body)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Error Binding data",
+		})
+		return
+	}
+
+	if body.UserID == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Please provide UserId",
+		})
+		return
+	}
+
+	productID := ctx.Param("id")
+
+	if productID == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Please provide product id",
+		})
+		return
+	}
+
+	var cartProducts []models.CartProduct
+
+	err = initializers.DB.QueryRow(context.Background(), database.SelectProductsFromUserID, body.UserID).Scan(&cartProducts)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error Quering calls to DB",
+		})
+		return
+	}
+
+	pID, err := uuid.Parse(productID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": "unable to parse product id",
+		})
+	}
+
+	var updatedCart []models.CartProduct
+
+	for _, product := range cartProducts {
+		if product.ProductID == pID {
+			product.Quantity++
+			updatedCart = append(updatedCart, product)
+			continue
+		}
+
+		updatedCart = append(updatedCart, product)
+	}
+
+	_, err = initializers.DB.Exec(context.Background(), database.UpdateCartProductWhereUserId, updatedCart, body.UserID)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Failed to update cart",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "Added Quantity for Product",
+	})
+
+}
+func RemoveQuantity(ctx *gin.Context) {
+
+	var body struct {
+		UserID int
+	}
+
+	err := ctx.ShouldBind(&body)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Error Binding data",
+		})
+		return
+	}
+
+	if body.UserID == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Please provide UserId",
+		})
+		return
+	}
+
+	productID := ctx.Param("id")
+
+	if productID == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Please provide product id",
+		})
+		return
+	}
+
+	var cartProducts []models.CartProduct
+
+	err = initializers.DB.QueryRow(context.Background(), database.SelectProductsFromUserID, body.UserID).Scan(&cartProducts)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error Quering calls to DB",
+		})
+		return
+	}
+
+	pID, err := uuid.Parse(productID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": "unable to parse product id",
+		})
+	}
+
+	var updatedCart []models.CartProduct
+
+	for _, product := range cartProducts {
+		if product.ProductID == pID {
+			product.Quantity--
+			updatedCart = append(updatedCart, product)
+			continue
+		}
+
+		updatedCart = append(updatedCart, product)
+	}
+
+	_, err = initializers.DB.Exec(context.Background(), database.UpdateCartProductWhereUserId, updatedCart, body.UserID)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Failed to update cart",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "Added Quantity for Product",
+	})
+
+}
