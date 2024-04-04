@@ -403,6 +403,7 @@ func AddQuantity(ctx *gin.Context) {
 	})
 
 }
+
 func RemoveQuantity(ctx *gin.Context) {
 
 	var body struct {
