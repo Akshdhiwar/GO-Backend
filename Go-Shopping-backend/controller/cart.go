@@ -399,7 +399,7 @@ func AddQuantity(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"message": "Removed Quantity for Product",
+		"message": "Added Quantity for Product",
 	})
 
 }
@@ -473,7 +473,7 @@ func RemoveQuantity(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"message": "Added Quantity for Product",
+		"message": "Removed Quantity for Product",
 	})
 
 }
