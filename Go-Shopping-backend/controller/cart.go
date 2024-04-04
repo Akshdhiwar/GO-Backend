@@ -221,11 +221,11 @@ func GetCart(ctx *gin.Context) {
 		return
 	}
 
-	var products []models.Product
+	var products []any
 
-	for _, product := range cart.Products {
-		id := product.ProductID
-		value, err := initializers.RedisClient.Get("product:" + product.ProductID.String()).Result()
+	for _, cartProduct := range cart.Products {
+		id := cartProduct.ProductID
+		value, err := initializers.RedisClient.Get("product:" + cartProduct.ProductID.String()).Result()
 		if err != nil {
 			var product models.Product
 
@@ -235,7 +235,15 @@ func GetCart(ctx *gin.Context) {
 				continue
 			}
 
-			products = append(products, product)
+			var productJson struct {
+				Product  models.Product
+				Quantity int
+			}
+
+			productJson.Product = product
+			productJson.Quantity = cartProduct.Quantity
+
+			products = append(products, productJson)
 			continue
 		}
 
@@ -245,7 +253,15 @@ func GetCart(ctx *gin.Context) {
 			continue
 		}
 
-		products = append(products, product)
+		var productJson struct {
+			Product  models.Product
+			Quantity int
+		}
+
+		productJson.Product = product
+		productJson.Quantity = cartProduct.Quantity
+
+		products = append(products, productJson)
 	}
 
 	ctx.JSON(http.StatusOK, products)
