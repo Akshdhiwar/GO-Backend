@@ -322,6 +322,8 @@ func UpdateProduct(ctx *gin.Context) {
 		Description string  `json:"description"`
 		Category    string  `json:"category"`
 		Image       string  `json:"image"`
+		Rating      float32
+		Count       int
 	}
 
 	// Binding the body with variable
@@ -382,9 +384,11 @@ func UpdateProduct(ctx *gin.Context) {
 	product.Description = body.Description
 	product.Category = body.Category
 	product.Image = body.Image
+	product.Rating = body.Rating
+	product.Count = body.Count
 
 	// Save the updated product to the database
-	_, err = initializers.DB.Exec(context.Background(), database.UpdateProduct, product.Title, product.Price, product.Description, product.Category, product.Image, id)
+	_, err = initializers.DB.Exec(context.Background(), database.UpdateProduct, product.Title, product.Price, product.Description, product.Category, product.Image, product.Rating, product.Count, id)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to update product"})
 		return

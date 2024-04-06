@@ -29,5 +29,5 @@ const (
 	SaveNewProduct                = ` INSERT INTO products ( title, price, category, image, description, rating , count) VALUES ($1, $2, $3, $4, $5 , $6 , $7)`
 	DeleteProduct                 = ` DELETE FROM products WHERE id = $1`
 	SelectIdFromProductsMismatch  = `SELECT id FROM products WHERE title = $1 AND id != $2`
-	UpdateProduct                 = ` UPDATE products SET title = $1, price = $2, description = $3, category = $4, image = $5 WHERE id = $6`
+	UpdateProduct                 = ` UPDATE products SET title = $1, price = $2, description = $3, category = $4, image = $5 , rating =$6, count =$7 WHERE id = $8`
 )
