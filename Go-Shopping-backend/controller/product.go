@@ -46,7 +46,12 @@ func GetProducts(ctx *gin.Context) {
 
 	log.Println(keys)
 
-	keys = keys[offset : (limit*originalOffset)+5]
+	start := offset
+	end := (limit * originalOffset) + limit
+	if end > len(keys) {
+		end = len(keys)
+	}
+	keys = keys[start:end]
 
 	// looping over keys to get all the products and appending it to products array
 	for _, key := range keys {
