@@ -26,7 +26,7 @@ func GetProducts(ctx *gin.Context) {
 
 	limit, err := strconv.Atoi(ctx.Query("limit"))
 	if err != nil || limit <= 0 {
-		limit = 10
+		limit = 16
 	}
 
 	if limit > 20 {
