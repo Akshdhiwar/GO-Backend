@@ -3,6 +3,7 @@ package main
 import (
 	"Go-Shopping-backend/api"
 	"Go-Shopping-backend/initializers"
+	"Go-Shopping-backend/middleware"
 	"Go-Shopping-backend/utils"
 	"os"
 
@@ -25,6 +26,8 @@ func main() {
 	router := gin.Default()
 
 	router.Use(utils.Cors())
+
+	router.Use(middleware.RateLimitMiddleware())
 
 	baseRoute := "api/v1"
 
