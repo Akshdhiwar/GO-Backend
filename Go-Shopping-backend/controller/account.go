@@ -122,7 +122,7 @@ func Login(ctx *gin.Context) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": users.ID,
-		"exp": time.Now().Add(time.Hour * 8).Unix(),
+		"exp": time.Now().Add(time.Hour * 1).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("JWTSECRET")))
