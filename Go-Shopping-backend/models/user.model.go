@@ -17,4 +17,6 @@ type User struct {
 	Role      int
 	CartID    uuid.UUID
 	Cart      Cart
+	FirstName string
+	LastName  string
 }

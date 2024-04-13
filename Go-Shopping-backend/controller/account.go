@@ -19,14 +19,16 @@ func Signup(ctx *gin.Context) {
 	// getting body
 
 	var body struct {
-		Email    string
-		Password string
+		Email     string
+		Password  string
+		FirstName string
+		LastName  string
 	}
 	ctx.Bind(&body)
 
 	// is any of field is empty condition check
 
-	if body.Email == "" || body.Password == "" {
+	if body.Email == "" || body.Password == "" || body.FirstName == "" || body.LastName == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Failed to get Email and Password",
 		})
@@ -53,10 +55,10 @@ func Signup(ctx *gin.Context) {
 	}
 
 	// storing the hash password and email in user object and saving it to DB
-	user := models.User{Email: body.Email, Password: string(hash)}
+	user := models.User{Email: body.Email, Password: string(hash), FirstName: body.FirstName, LastName: body.LastName}
 
 	// Execute the SQL query
-	_, err = initializers.DB.Exec(context.Background(), database.SaveUserPassword, user.Email, user.Password)
+	_, err = initializers.DB.Exec(context.Background(), database.SaveUserPassword, user.Email, user.Password, user.FirstName, body.LastName)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Unable to save user to db",
@@ -139,7 +141,8 @@ func Login(ctx *gin.Context) {
 	ctx.SetCookie("Authorization", tokenString, 3600*8, "", "", false, true)
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"message": "Login Successfull",
+		"message":      "Login Successful",
+		"access_token": tokenString,
 	})
 
 }

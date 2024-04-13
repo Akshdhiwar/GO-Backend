@@ -9,9 +9,10 @@ func Cors() gin.HandlerFunc {
 	// Cors config
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"http://localhost:5173", "https://dumbles.vercel.app"} // specify the exact origin you want to allow
+	// config.AllowOrigins = []string{"*"} // specify the exact origin you want to allow
 	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE"}
-	config.AllowCredentials = true           // if you want to allow cookies to be sent to the server
-	config.AllowHeaders = []string{"Origin"} // specify the allowed headers
+	config.AllowCredentials = true                                            // if you want to allow cookies to be sent to the server
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"} // specify the allowed headers
 
 	return cors.New(config)
 }

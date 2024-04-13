@@ -3,7 +3,7 @@ package database
 // account related queries
 const (
 	SelectUserIdFromEmail      = "SELECT id FROM users WHERE email=$1"
-	SaveUserPassword           = `INSERT INTO users (email, password) VALUES ($1, $2)`
+	SaveUserPassword           = `INSERT INTO users (email, password ,first_name , last_name) VALUES ($1, $2, $3 ,$4)`
 	SelectUserDetailsFromEmail = "SELECT id , password FROM users WHERE email=$1"
 	SelectUserIdFromID         = "SELECT id FROM users WHERE id=$1"
 	UpdateCartId               = "UPDATE users SET cart_id=$1 WHERE id=$2"
