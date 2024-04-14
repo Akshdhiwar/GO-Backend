@@ -94,7 +94,7 @@ func Login(ctx *gin.Context) {
 	}
 
 	var users models.User
-	err := initializers.DB.QueryRow(context.Background(), database.SelectUserDetailsFromEmail, body.Email).Scan(&users.ID, &users.Password)
+	err := initializers.DB.QueryRow(context.Background(), database.SelectUserDetailsFromEmail, body.Email).Scan(&users.ID, &users.Password, &users.FirstName, &users.LastName)
 
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -137,12 +137,10 @@ func Login(ctx *gin.Context) {
 		return
 	}
 
-	ctx.SetSameSite(http.SameSiteLaxMode)
-	ctx.SetCookie("Authorization", tokenString, 3600*8, "", "", false, true)
-
 	ctx.JSON(http.StatusOK, gin.H{
 		"message":      "Login Successful",
 		"access_token": tokenString,
+		"user_Details": users,
 	})
 
 }
