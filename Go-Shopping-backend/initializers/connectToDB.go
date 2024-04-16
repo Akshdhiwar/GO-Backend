@@ -58,22 +58,22 @@ func migration() {
 		log.Fatalf("Failed to execute migration: %v", err)
 	}
 
-	// Create the users table
-	_, err = DB.Exec(context.Background(), `
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-			first_name TEXT NOT NULL,
-			last_name TEXT NOT NULL,
-            role INTEGER DEFAULT 2,
-            cart_id UUID
-        )
-    `)
+	// // Create the users table
+	// _, err = DB.Exec(context.Background(), `
+	//     CREATE TABLE IF NOT EXISTS users (
+	//         id SERIAL PRIMARY KEY,
+	//         email TEXT UNIQUE NOT NULL,
+	//         password TEXT NOT NULL,
+	// 		first_name TEXT NOT NULL,
+	// 		last_name TEXT NOT NULL,
+	//         role INTEGER DEFAULT 2,
+	//         cart_id UUID
+	//     )
+	// `)
 
-	if err != nil {
-		log.Fatalf("Failed to create users table: %v", err)
-	}
+	// if err != nil {
+	// 	log.Fatalf("Failed to create users table: %v", err)
+	// }
 
 	// Create the carts table
 	_, err = DB.Exec(context.Background(), `
