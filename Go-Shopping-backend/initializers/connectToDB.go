@@ -6,10 +6,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var DB *pgx.Conn
+var DB *pgxpool.Pool
 
 func ConnectToDB() {
 	dbUser := os.Getenv("RAILS_DATABASE_USER")
@@ -27,7 +27,7 @@ func ConnectToDB() {
 	}
 
 	var err error
-	DB, err = pgx.Connect(context.Background(), dsn)
+	DB, err = pgxpool.New(context.Background(), dsn)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		os.Exit(1)

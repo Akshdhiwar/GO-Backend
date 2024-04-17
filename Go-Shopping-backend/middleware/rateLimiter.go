@@ -81,7 +81,7 @@ func RateLimitMiddleware() gin.HandlerFunc {
 				})
 			}
 
-			err = initializers.RedisClient.Set(key, newClientJson, 30*time.Second).Err()
+			err = initializers.RedisClient.Set(key, newClientJson, 10*time.Second).Err()
 			if err != nil {
 				ctx.JSON(http.StatusInternalServerError, gin.H{
 					"message": "Error storing new client to redis",

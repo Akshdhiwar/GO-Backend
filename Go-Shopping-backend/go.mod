@@ -12,8 +12,10 @@ require (
 
 require (
 	github.com/google/go-cmp v0.6.0 // indirect
+	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.32.0 // indirect
+	golang.org/x/sync v0.1.0 // indirect
 )
 
 require (
