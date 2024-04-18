@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -38,7 +39,7 @@ func Signup(ctx *gin.Context) {
 	var users models.User
 	initializers.DB.QueryRow(context.Background(), database.SelectUserIdFromEmail, body.Email).Scan(&users.ID)
 	log.Println(users.ID)
-	if users.ID != 0 {
+	if users.ID != uuid.Nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "User already present please login",
 		})
@@ -104,7 +105,7 @@ func Login(ctx *gin.Context) {
 	}
 
 	log.Println(users.ID, users.Email, users.Password)
-	if users.ID == 0 {
+	if users.ID == uuid.Nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "User not found",
 		})

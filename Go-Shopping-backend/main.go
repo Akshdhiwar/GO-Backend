@@ -5,9 +5,12 @@ import (
 	"Go-Shopping-backend/initializers"
 	"Go-Shopping-backend/middleware"
 	"Go-Shopping-backend/utils"
+	"context"
+	"fmt"
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func init() {
@@ -43,6 +46,30 @@ func main() {
 
 	// api route for Cart
 	api.CartRouter(router.Group(baseRoute + "/cart"))
+
+	rows, err := initializers.DB.Query(context.Background(), "SELECT id , username , email FROM users")
+	if err != nil {
+		fmt.Println("Error executing query:", err)
+		return
+	}
+
+	for rows.Next() {
+		var id uuid.UUID
+		var username any
+		var email string
+		// Add more variables as per your user schema
+		if err := rows.Scan(&id, &username, &email); err != nil {
+			fmt.Println("Error scanning row:", err)
+			continue
+		}
+		fmt.Printf("User ID: %d, Username: %s, Email: %s\n", id, username, email)
+		// Print more user data as needed
+	}
+
+	if err := rows.Err(); err != nil {
+		fmt.Println("Error iterating over rows:", err)
+		return
+	}
 
 	// Run the server on port 3000
 	router.Run()

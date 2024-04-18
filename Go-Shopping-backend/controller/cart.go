@@ -20,7 +20,7 @@ import (
 func AddProductToCart(ctx *gin.Context) {
 
 	var body struct {
-		UserID    int    `json:"user_id"`
+		UserID    string `json:"user_id"`
 		ProductID string `json:"product_id"`
 	}
 
@@ -32,7 +32,7 @@ func AddProductToCart(ctx *gin.Context) {
 		return
 	}
 
-	if body.ProductID == "" || body.UserID == 0 {
+	if body.ProductID == "" || body.UserID == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Product ID or User ID missing",
 		})
@@ -49,7 +49,18 @@ func AddProductToCart(ctx *gin.Context) {
 
 	var user models.User
 
-	err = initializers.DB.QueryRow(context.Background(), database.SelectUserIdFromID, body.UserID).Scan(&user.ID)
+	log.Println(body.UserID)
+
+	userId, err := uuid.Parse(body.UserID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error parsing UUID",
+		})
+	}
+
+	fmt.Println(userId)
+
+	err = initializers.DB.QueryRow(context.Background(), database.SelectUserIdFromID, userId).Scan(&user.ID)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error querying user from database",
@@ -78,7 +89,7 @@ func AddProductToCart(ctx *gin.Context) {
 
 	var cart models.Cart
 
-	row = initializers.DB.QueryRow(context.Background(), database.SelectCartIdFromUserId, body.UserID)
+	row = initializers.DB.QueryRow(context.Background(), database.SelectCartIdFromUserId, userId)
 
 	err = row.Scan(&cart.ID)
 	if err == pgx.ErrNoRows {
@@ -89,10 +100,17 @@ func AddProductToCart(ctx *gin.Context) {
 		cartProducts.ProductID = id
 		cartProducts.Quantity = 1
 
-		cart.UserID = body.UserID
+		id, err := uuid.Parse(body.UserID)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": "Error parsing UUID",
+			})
+		}
+
+		cart.UserID = id
 		cart.Products = []models.CartProduct{cartProducts}
 
-		_, err := initializers.DB.Exec(context.Background(), database.SaveCart, body.UserID, cart.Products, time.Now(), time.Now())
+		_, err = initializers.DB.Exec(context.Background(), database.SaveCart, userId, cart.Products, time.Now(), time.Now())
 
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{
@@ -102,7 +120,7 @@ func AddProductToCart(ctx *gin.Context) {
 		}
 
 		var cartID uuid.UUID
-		err = initializers.DB.QueryRow(context.Background(), database.SelectCartIdFromUserId, body.UserID).Scan(&cartID)
+		err = initializers.DB.QueryRow(context.Background(), database.SelectCartIdFromUserId, userId).Scan(&cartID)
 
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{
@@ -111,7 +129,7 @@ func AddProductToCart(ctx *gin.Context) {
 			return
 		}
 
-		_, err = initializers.DB.Exec(context.Background(), database.UpdateCartId, cartID, body.UserID)
+		_, err = initializers.DB.Exec(context.Background(), database.UpdateCartId, cartID, userId)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"message": "Failed to update user cart id",
@@ -130,7 +148,7 @@ func AddProductToCart(ctx *gin.Context) {
 
 		var newcart models.Cart
 
-		err := initializers.DB.QueryRow(context.Background(), database.SelectCartDetailsFromUserId, body.UserID).Scan(&newcart.Products, &newcart.UserID)
+		err := initializers.DB.QueryRow(context.Background(), database.SelectCartDetailsFromUserId, userId).Scan(&newcart.Products, &newcart.UserID)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to retrieve cart"})
 			return

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -12,11 +13,23 @@ import (
 
 var emailCtxKey = "email"
 
+func extractToken(authHeader string) string {
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		// Invalid authorization header format
+		return ""
+	}
+	return parts[1]
+}
+
 func Authenticate(c *gin.Context) {
 	hmacSecret := "WWfHYuaouEZyeedr+hOAVvnyM9/Lu1aCKmZh4F7IEe6Mb4zo6nkwCK4vd2ajNwmiOud4R5sr9tfTP57gA/0Z9g=="
 	// Read the Authorization header
 	token := c.GetHeader("Authorization")
 	log.Println(token)
+	token = extractToken(token)
+	log.Println(token)
+
 	if token == "" {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return

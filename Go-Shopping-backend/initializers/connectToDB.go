@@ -82,7 +82,7 @@ func migration() {
             created_at TIMESTAMPTZ DEFAULT now(),
             updated_at TIMESTAMPTZ DEFAULT now(),
             deleted_at TIMESTAMPTZ,
-            user_id INTEGER,
+            user_id UUID,
             products JSONB[] DEFAULT '{}'::JSONB[]
         )
     `)

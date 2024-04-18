@@ -5,7 +5,7 @@ const (
 	SelectUserIdFromEmail      = "SELECT id FROM users WHERE email=$1"
 	SaveUserPassword           = `INSERT INTO users (email, password ,first_name , last_name) VALUES ($1, $2, $3 ,$4)`
 	SelectUserDetailsFromEmail = "SELECT id , password , first_name , last_name FROM users WHERE email=$1"
-	SelectUserIdFromID         = "SELECT id FROM users WHERE id=$1"
+	SelectUserIdFromID         = "SELECT id FROM users WHERE id = $1"
 	UpdateCartId               = "UPDATE users SET cart_id=$1 WHERE id=$2"
 	SelectCartIdFromId         = "SELECT cart_id FROM users WHERE id = $1"
 )

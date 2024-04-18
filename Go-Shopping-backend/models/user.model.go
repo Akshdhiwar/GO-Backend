@@ -8,7 +8,7 @@ import (
 )
 
 type User struct {
-	ID        uint
+	ID        uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt pgtype.Timestamptz
