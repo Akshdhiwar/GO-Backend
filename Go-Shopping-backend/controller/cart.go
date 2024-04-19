@@ -28,6 +28,7 @@ func AddProductToCart(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Failed to Bind data",
+			"type":    "error",
 		})
 		return
 	}
@@ -35,6 +36,7 @@ func AddProductToCart(ctx *gin.Context) {
 	if body.ProductID == "" || body.UserID == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Product ID or User ID missing",
+			"type":    "error",
 		})
 		return
 	}
@@ -43,6 +45,7 @@ func AddProductToCart(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid product ID",
+			"type":    "error",
 		})
 		return
 	}
@@ -55,6 +58,7 @@ func AddProductToCart(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Error parsing UUID",
+			"type":    "error",
 		})
 	}
 
@@ -64,6 +68,7 @@ func AddProductToCart(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error querying user from database",
+			"type":    "error",
 		})
 		return
 	}
@@ -78,10 +83,12 @@ func AddProductToCart(ctx *gin.Context) {
 		if err == pgx.ErrNoRows {
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"message": "Product not found",
+				"type":    "success",
 			})
 		} else {
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"message": "Error querying product from database",
+				"type":    "error",
 			})
 		}
 		return
@@ -104,6 +111,7 @@ func AddProductToCart(ctx *gin.Context) {
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"message": "Error parsing UUID",
+				"type":    "error",
 			})
 		}
 
@@ -115,6 +123,7 @@ func AddProductToCart(ctx *gin.Context) {
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"message": "Failed to create cart",
+				"type":    "error",
 			})
 			return
 		}
@@ -125,6 +134,7 @@ func AddProductToCart(ctx *gin.Context) {
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"message": "Failed to get cart id of saved cart",
+				"type":    "error",
 			})
 			return
 		}
@@ -133,6 +143,7 @@ func AddProductToCart(ctx *gin.Context) {
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"message": "Failed to update user cart id",
+				"type":    "error",
 			})
 			return
 		}
@@ -141,6 +152,7 @@ func AddProductToCart(ctx *gin.Context) {
 			http.StatusCreated,
 			gin.H{
 				"message": "Product added to cart",
+				"type":    "success",
 			},
 		)
 	} else {
@@ -150,7 +162,7 @@ func AddProductToCart(ctx *gin.Context) {
 
 		err := initializers.DB.QueryRow(context.Background(), database.SelectCartDetailsFromUserId, userId).Scan(&newcart.Products, &newcart.UserID)
 		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to retrieve cart"})
+			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to retrieve cart", "type": "error"})
 			return
 		}
 
@@ -167,7 +179,10 @@ func AddProductToCart(ctx *gin.Context) {
 
 		// If product is already in the cart, return an error
 		if found {
-			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Product already in cart"})
+			ctx.JSON(http.StatusOK, gin.H{
+				"message": "Product already in cart",
+				"type":    "error",
+			})
 			return
 		}
 
@@ -182,6 +197,7 @@ func AddProductToCart(ctx *gin.Context) {
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"message": "Failed to parse UUID",
+				"type":    "error",
 			})
 		}
 
@@ -194,12 +210,15 @@ func AddProductToCart(ctx *gin.Context) {
 		// Execute the SQL query
 		_, err = initializers.DB.Exec(context.Background(), database.UpdateCart, newcart.Products, time.Now(), newcart.UserID)
 		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to update cart"})
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": "Failed to update cart",
+				"type":    "error",
+			})
 			return
 		}
 
 		// Return success message
-		ctx.JSON(http.StatusCreated, gin.H{"message": "Product added to cart"})
+		ctx.JSON(http.StatusCreated, gin.H{"message": "Product added to cart", "type": "success"})
 
 	}
 }
@@ -212,6 +231,7 @@ func GetCart(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error querying user from database",
+			"type":    "error",
 		})
 		return
 	}
@@ -219,6 +239,7 @@ func GetCart(ctx *gin.Context) {
 	if !isCartIDPresent.Valid {
 		ctx.JSON(http.StatusOK, gin.H{
 			"message": "No products in cart",
+			"type":    "success",
 		})
 		return
 	}
@@ -227,7 +248,7 @@ func GetCart(ctx *gin.Context) {
 
 	err = initializers.DB.QueryRow(context.Background(), database.SelectProductsFromUserID, id).Scan(&cart.Products)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to retrieve cart"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to retrieve cart", "type": "error"})
 		return
 	}
 
@@ -235,6 +256,7 @@ func GetCart(ctx *gin.Context) {
 	if len(cart.Products) == 0 {
 		ctx.JSON(http.StatusOK, gin.H{
 			"message": "No products in cart",
+			"type":    "success",
 		})
 		return
 	}
@@ -291,20 +313,33 @@ func DeleteProductFromCart(ctx *gin.Context) {
 	var productID = ctx.Param("id")
 
 	var body struct {
-		UserID int `json:"user_id"`
+		UserID string `json:"user_id"`
 	}
 
 	err := ctx.ShouldBind(&body)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Failed to Bind data",
+			"type":    "error",
 		})
+		return
 	}
 
-	if body.UserID == 0 {
+	if body.UserID == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "User ID missing or invalid",
+			"type":    "error",
 		})
+		return
+	}
+
+	id, err := uuid.Parse(body.UserID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid product ID",
+			"type":    "error",
+		})
+		return
 	}
 
 	_, err = uuid.Parse(productID)
@@ -312,16 +347,19 @@ func DeleteProductFromCart(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid product ID",
+			"type":    "error",
 		})
+		return
 	}
 
 	var products []models.CartProduct
 
-	err = initializers.DB.QueryRow(context.Background(), database.SelectProductsFromUserID, body.UserID).Scan(&products)
+	err = initializers.DB.QueryRow(context.Background(), database.SelectProductsFromUserID, id).Scan(&products)
 
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Failed to retrieve cart",
+			"type":    "error",
 		})
 		return
 	}
@@ -338,12 +376,14 @@ func DeleteProductFromCart(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Failed to update cart",
+			"type":    "error",
 		})
 		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Product removed from cart",
+		"type":    "success",
 	})
 
 }
@@ -358,6 +398,7 @@ func AddQuantity(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error Binding data",
+			"type":    "error",
 		})
 		return
 	}
@@ -365,6 +406,7 @@ func AddQuantity(ctx *gin.Context) {
 	if body.UserID == 0 {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Please provide UserId",
+			"type":    "error",
 		})
 		return
 	}
@@ -374,6 +416,7 @@ func AddQuantity(ctx *gin.Context) {
 	if productID == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Please provide product id",
+			"type":    "error",
 		})
 		return
 	}
@@ -384,6 +427,7 @@ func AddQuantity(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Error Quering calls to DB",
+			"type":    "error",
 		})
 		return
 	}
@@ -392,6 +436,7 @@ func AddQuantity(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "unable to parse product id",
+			"type":    "error",
 		})
 	}
 
@@ -412,12 +457,14 @@ func AddQuantity(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Failed to update cart",
+			"type":    "error",
 		})
 		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Added Quantity for Product",
+		"type":    "success",
 	})
 
 }
@@ -432,6 +479,7 @@ func RemoveQuantity(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error Binding data",
+			"type":    "error",
 		})
 		return
 	}
@@ -439,6 +487,7 @@ func RemoveQuantity(ctx *gin.Context) {
 	if body.UserID == 0 {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Please provide UserId",
+			"type":    "error",
 		})
 		return
 	}
@@ -448,6 +497,7 @@ func RemoveQuantity(ctx *gin.Context) {
 	if productID == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Please provide product id",
+			"type":    "error",
 		})
 		return
 	}
@@ -458,6 +508,7 @@ func RemoveQuantity(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Error Quering calls to DB",
+			"type":    "error",
 		})
 		return
 	}
@@ -466,6 +517,7 @@ func RemoveQuantity(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "unable to parse product id",
+			"type":    "error",
 		})
 	}
 
@@ -486,12 +538,14 @@ func RemoveQuantity(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Failed to update cart",
+			"type":    "error",
 		})
 		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Removed Quantity for Product",
+		"type":    "success",
 	})
 
 }

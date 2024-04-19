@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +24,6 @@ func extractToken(authHeader string) string {
 }
 
 func Authenticate(c *gin.Context) {
-	hmacSecret := "WWfHYuaouEZyeedr+hOAVvnyM9/Lu1aCKmZh4F7IEe6Mb4zo6nkwCK4vd2ajNwmiOud4R5sr9tfTP57gA/0Z9g=="
 	// Read the Authorization header
 	token := c.GetHeader("Authorization")
 	log.Println(token)
@@ -37,7 +37,7 @@ func Authenticate(c *gin.Context) {
 
 	// Validate token
 	// convert strign to a byte array
-	email, err := parseJWTToken(token, []byte(hmacSecret))
+	email, err := parseJWTToken(token, []byte(os.Getenv("JWTSECRET")))
 
 	if err != nil {
 		log.Printf("Error parsing token: %s", err)
