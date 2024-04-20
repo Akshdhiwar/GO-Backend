@@ -237,10 +237,8 @@ func GetCart(ctx *gin.Context) {
 	}
 
 	if !isCartIDPresent.Valid {
-		ctx.JSON(http.StatusOK, gin.H{
-			"message": "No products in cart",
-			"type":    "success",
-		})
+		products := make([]int, 0)
+		ctx.JSON(http.StatusOK, products)
 		return
 	}
 
@@ -254,10 +252,8 @@ func GetCart(ctx *gin.Context) {
 
 	// if length of cart is 0 then return
 	if len(cart.Products) == 0 {
-		ctx.JSON(http.StatusOK, gin.H{
-			"message": "No products in cart",
-			"type":    "success",
-		})
+		products := make([]int, 0)
+		ctx.JSON(http.StatusOK, products)
 		return
 	}
 
