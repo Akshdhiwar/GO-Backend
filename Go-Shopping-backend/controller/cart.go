@@ -387,7 +387,7 @@ func DeleteProductFromCart(ctx *gin.Context) {
 func AddQuantity(ctx *gin.Context) {
 
 	var body struct {
-		UserID int
+		UserID string
 	}
 
 	err := ctx.ShouldBind(&body)
@@ -399,7 +399,15 @@ func AddQuantity(ctx *gin.Context) {
 		return
 	}
 
-	if body.UserID == 0 {
+	userId, err := uuid.Parse(body.UserID)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": "error pearsing uuid",
+		})
+	}
+
+	if userId == uuid.Nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Please provide UserId",
 			"type":    "error",
