@@ -30,7 +30,7 @@ func main() {
 
 	router.Use(utils.Cors())
 
-	router.Use(middleware.RateLimitMiddleware())
+	//router.Use(middleware.RateLimitMiddleware())
 
 	baseRoute := "api/v1"
 
