@@ -18,6 +18,7 @@ type Client struct {
 func RateLimitMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ip, _, _ := net.SplitHostPort(ctx.Request.RemoteAddr)
+		log.Println(ip)
 		key := "client:" + ip
 
 		exists, err := initializers.RedisClient.Exists(key).Result()
