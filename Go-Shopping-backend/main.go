@@ -5,12 +5,13 @@ import (
 	"Go-Shopping-backend/initializers"
 	"Go-Shopping-backend/middleware"
 	"Go-Shopping-backend/utils"
-	"context"
-	"fmt"
+	"log"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
+	"github.com/stripe/stripe-go/v78"
+	"github.com/stripe/stripe-go/v78/checkout/session"
 )
 
 func init() {
@@ -27,6 +28,8 @@ func init() {
 func main() {
 	// Create a new Gin router
 	router := gin.Default()
+
+	stripe.Key = "sk_test_51P8l3NP5EFXn0qOIU0bc7IAxXfynTefcObxvjrv4sfkcnWJ2Ecm3Mi4PZ7MZkL1rclcek3rQ6GA3mdMX1oLG6wGL00CuCnI5BZ"
 
 	router.Use(utils.Cors())
 
@@ -47,30 +50,32 @@ func main() {
 	// api route for Cart
 	api.CartRouter(router.Group(baseRoute + "/cart"))
 
-	rows, err := initializers.DB.Query(context.Background(), "SELECT id , username , email FROM users")
-	if err != nil {
-		fmt.Println("Error executing query:", err)
-		return
-	}
-
-	for rows.Next() {
-		var id uuid.UUID
-		var username any
-		var email string
-		// Add more variables as per your user schema
-		if err := rows.Scan(&id, &username, &email); err != nil {
-			fmt.Println("Error scanning row:", err)
-			continue
-		}
-		fmt.Printf("User ID: %d, Username: %s, Email: %s\n", id, username, email)
-		// Print more user data as needed
-	}
-
-	if err := rows.Err(); err != nil {
-		fmt.Println("Error iterating over rows:", err)
-		return
-	}
+	router.POST(baseRoute+"/create-checkout-session", createCheckoutSession)
 
 	// Run the server on port 3000
 	router.Run()
+}
+
+func createCheckoutSession(ctx *gin.Context) {
+	domain := "http://localhost:5173"
+	params := &stripe.CheckoutSessionParams{
+		LineItems: []*stripe.CheckoutSessionLineItemParams{
+			&stripe.CheckoutSessionLineItemParams{
+				// Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+				Price:    stripe.String("price_1P8lXdP5EFXn0qOIIFh58hdD"),
+				Quantity: stripe.Int64(1),
+			},
+		},
+		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
+		SuccessURL: stripe.String(domain + "?success=true"),
+		CancelURL:  stripe.String(domain + "?canceled=true"),
+	}
+
+	s, err := session.New(params)
+
+	if err != nil {
+		log.Printf("session.New: %v", err)
+	}
+
+	ctx.JSON(http.StatusOK, s.URL)
 }
