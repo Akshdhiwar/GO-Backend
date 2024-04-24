@@ -13,6 +13,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/stripe/stripe-go/v78"
+	"github.com/stripe/stripe-go/v78/product"
 )
 
 func GetProducts(ctx *gin.Context) {
@@ -165,18 +167,18 @@ func AddProducts(ctx *gin.Context) {
 		return
 	}
 
-	var product models.Product
+	var nProduct models.Product
 
 	// checking if title with same name is present or not
 	var err error
-	err = initializers.DB.QueryRow(context.Background(), database.SelectProductDetailsFromTitle, body.Title).Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt, &product.Title, &product.Price, &product.Description, &product.Category, &product.Image, &product.Rating, &product.Count)
+	err = initializers.DB.QueryRow(context.Background(), database.SelectProductDetailsFromTitle, body.Title).Scan(&nProduct.ID, &nProduct.CreatedAt, &nProduct.UpdatedAt, &nProduct.Title, nProduct.Price, &nProduct.Description, &nProduct.Category, &nProduct.Image, &nProduct.Rating, &nProduct.Count)
 	if err == pgx.ErrNoRows {
 		log.Printf("No product with title '%s' found", body.Title)
 	}
 
-	log.Println(product.Title, body.Title)
+	log.Println(nProduct.Title, body.Title)
 
-	if product.Title == body.Title {
+	if nProduct.Title == body.Title {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Product already present please check Title. Title is matching with some other product",
 		})
@@ -204,6 +206,24 @@ func AddProducts(ctx *gin.Context) {
 	productJSON, err := json.Marshal(newlyAddedProduct)
 	if err != nil {
 		log.Printf("Error marshaling product: %v", err)
+	}
+
+	images := []*string{&body.Image}
+
+	params := &stripe.ProductParams{
+		Name:        stripe.String(body.Title),
+		Description: stripe.String(body.Description),
+		DefaultPriceData: &stripe.ProductDefaultPriceDataParams{
+			Currency:          stripe.String("USD"),
+			UnitAmountDecimal: stripe.Float64(body.Price),
+		},
+		Images: images,
+	}
+
+	_, err = product.New(params)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
 	}
 
 	// Set product in Redis with key in the format "product:id"

@@ -23,13 +23,12 @@ func init() {
 	initializers.ConnectToDB()
 	initializers.ConnectToRedis()
 	initializers.LoadProductsToRedis()
+	stripe.Key = os.Getenv("STRIPE_SECREZT_KEY")
 }
 
 func main() {
 	// Create a new Gin router
 	router := gin.Default()
-
-	stripe.Key = "sk_test_51P8l3NP5EFXn0qOIU0bc7IAxXfynTefcObxvjrv4sfkcnWJ2Ecm3Mi4PZ7MZkL1rclcek3rQ6GA3mdMX1oLG6wGL00CuCnI5BZ"
 
 	router.Use(utils.Cors())
 
@@ -62,7 +61,7 @@ func createCheckoutSession(ctx *gin.Context) {
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			&stripe.CheckoutSessionLineItemParams{
 				// Provide the exact Price ID (for example, pr_1234) of the product you want to sell
-				Price:    stripe.String("price_1P8lXdP5EFXn0qOIIFh58hdD"),
+				Price:    stripe.String("price_1P9ALnP5EFXn0qOIuuy6AMRR"),
 				Quantity: stripe.Int64(1),
 			},
 		},

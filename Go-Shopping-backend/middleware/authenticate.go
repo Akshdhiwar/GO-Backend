@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -46,10 +45,9 @@ func Authenticate(c *gin.Context) {
 	}
 
 	log.Printf("Received request from %s", email)
+	c.Set("userEmail", email)
 
-	// Save the email in the context to use later in the handler
-	ctx := context.WithValue(c, emailCtxKey, email)
-	c.Request = c.Request.WithContext(ctx)
+	c.Request.Header.Set("X-User-Email", email)
 
 	// Authenticated. Continue (call next handler)
 	c.Next()
