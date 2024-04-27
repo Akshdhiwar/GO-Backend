@@ -25,9 +25,7 @@ func extractToken(authHeader string) string {
 func Authenticate(c *gin.Context) {
 	// Read the Authorization header
 	token := c.GetHeader("Authorization")
-	log.Println(token)
 	token = extractToken(token)
-	log.Println(token)
 
 	if token == "" {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})

@@ -46,8 +46,6 @@ func GetProducts(ctx *gin.Context) {
 		log.Printf("Failed to retrieve products from Redis")
 	}
 
-	log.Println(keys)
-
 	start := offset
 	end := (limit * originalOffset) + limit
 	if end > len(keys) {
@@ -73,7 +71,6 @@ func GetProducts(ctx *gin.Context) {
 
 	if len(products) > 0 {
 		ctx.JSON(http.StatusOK, products)
-		log.Println("got product from redis")
 		return
 	}
 
@@ -124,8 +121,6 @@ func GetProducts(ctx *gin.Context) {
 func SetProductsInRedis(products []models.Product) error {
 	// Set products in Redis
 
-	log.Println("adding product to redis")
-
 	for _, product := range products {
 		// Convert product to JSON
 		productJSON, err := json.Marshal(product)
@@ -175,8 +170,6 @@ func AddProducts(ctx *gin.Context) {
 	if err == pgx.ErrNoRows {
 		log.Printf("No product with title '%s' found", body.Title)
 	}
-
-	log.Println(nProduct.Title, body.Title)
 
 	if nProduct.Title == body.Title {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -367,8 +360,6 @@ func UpdateProduct(ctx *gin.Context) {
 		return
 	}
 
-	log.Println(id)
-
 	var product models.Product
 
 	// Find the product by ID
@@ -390,7 +381,6 @@ func UpdateProduct(ctx *gin.Context) {
 	var existingProduct models.Product
 	err = initializers.DB.QueryRow(context.Background(), database.SelectIdFromProductsMismatch, body.Title, id).Scan(&existingProduct.ID)
 	if err == nil {
-		log.Println(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Product already present. Please check Title, it matches with another product"})
 		return
 	} else if err != pgx.ErrNoRows {

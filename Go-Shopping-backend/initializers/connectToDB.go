@@ -33,8 +33,6 @@ func ConnectToDB() {
 		os.Exit(1)
 	}
 
-	log.Println("Connected to database")
-
 	migration()
 }
 

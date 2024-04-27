@@ -19,7 +19,6 @@ func ConnectToRedis() {
 			Password: "",               // No password
 			DB:       0,                // Use the default database
 		})
-		log.Println("getting redis from local")
 	} else {
 		redisURI := os.Getenv("RAILS_REDIS_URL")
 		addr, err := redis.ParseURL(redisURI)
@@ -27,10 +26,7 @@ func ConnectToRedis() {
 			panic(err)
 		}
 		client = redis.NewClient(addr)
-		log.Println("getting redis from aiven")
 	}
-
-	log.Printf("From redis file")
 
 	// Ping the Redis server to test the connection
 	pong, err := client.Ping().Result()

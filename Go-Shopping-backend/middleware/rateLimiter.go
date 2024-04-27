@@ -3,7 +3,6 @@ package middleware
 import (
 	"Go-Shopping-backend/initializers"
 	"encoding/json"
-	"log"
 	"net"
 	"net/http"
 	"time"
@@ -18,7 +17,6 @@ type Client struct {
 func RateLimitMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ip, _, _ := net.SplitHostPort(ctx.Request.RemoteAddr)
-		log.Println(ip)
 		key := "client:" + ip
 
 		exists, err := initializers.RedisClient.Exists(key).Result()
@@ -49,7 +47,6 @@ func RateLimitMiddleware() gin.HandlerFunc {
 			}
 
 			client.Limit++
-			log.Println(client.Limit)
 			remainingTime := initializers.RedisClient.TTL(key).Val()
 
 			if client.Limit > 5 {

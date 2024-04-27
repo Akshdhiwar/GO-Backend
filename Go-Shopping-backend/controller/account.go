@@ -5,7 +5,6 @@ import (
 	"Go-Shopping-backend/initializers"
 	"Go-Shopping-backend/models"
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -38,7 +37,6 @@ func Signup(ctx *gin.Context) {
 
 	var users models.User
 	initializers.DB.QueryRow(context.Background(), database.SelectUserIdFromEmail, body.Email).Scan(&users.ID)
-	log.Println(users.ID)
 	if users.ID != uuid.Nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "User already present please login",
@@ -104,7 +102,6 @@ func Login(ctx *gin.Context) {
 		return
 	}
 
-	log.Println(users.ID, users.Email, users.Password)
 	if users.ID == uuid.Nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "User not found",

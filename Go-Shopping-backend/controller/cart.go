@@ -52,8 +52,6 @@ func AddProductToCart(ctx *gin.Context) {
 
 	var user models.User
 
-	log.Println(body.UserID)
-
 	userId, err := uuid.Parse(body.UserID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -165,8 +163,6 @@ func AddProductToCart(ctx *gin.Context) {
 			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Failed to retrieve cart", "type": "error"})
 			return
 		}
-
-		log.Println(newcart.Products)
 
 		// Check if the product is already in the cart
 		found := false

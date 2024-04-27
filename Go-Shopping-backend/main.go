@@ -5,7 +5,6 @@ import (
 	"Go-Shopping-backend/initializers"
 	"Go-Shopping-backend/middleware"
 	"Go-Shopping-backend/utils"
-	"log"
 	"net/http"
 	"os"
 
@@ -61,7 +60,7 @@ func createCheckoutSession(ctx *gin.Context) {
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			&stripe.CheckoutSessionLineItemParams{
 				// Provide the exact Price ID (for example, pr_1234) of the product you want to sell
-				Price:    stripe.String("price_1P9ALnP5EFXn0qOIuuy6AMRR"),
+				Price:    stripe.String("price_1PA5cTP5EFXn0qOIadD6H5qs"),
 				Quantity: stripe.Int64(1),
 			},
 		},
@@ -73,8 +72,9 @@ func createCheckoutSession(ctx *gin.Context) {
 	s, err := session.New(params)
 
 	if err != nil {
-		log.Printf("session.New: %v", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create checkout session"})
+		return
 	}
 
-	ctx.JSON(http.StatusOK, s.URL)
+	ctx.JSON(http.StatusOK, gin.H{"url": s.URL})
 }
