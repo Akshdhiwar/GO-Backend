@@ -56,14 +56,34 @@ func main() {
 
 func createCheckoutSession(ctx *gin.Context) {
 	domain := "http://localhost:5173"
+
+	type Product struct {
+		PriceID  string `json:"price_id"`
+		Quantity int64  `json:"quantity"`
+	}
+
+	var body struct {
+		Products []Product `json:"products"`
+	}
+
+	err := ctx.ShouldBind(&body)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+	}
+
+	lineItems := []*stripe.CheckoutSessionLineItemParams{}
+
+	for _, item := range body.Products {
+		stripeProduct := &stripe.CheckoutSessionLineItemParams{
+			Price:    stripe.String(item.PriceID),
+			Quantity: stripe.Int64(item.Quantity),
+		}
+
+		lineItems = append(lineItems, stripeProduct)
+	}
+
 	params := &stripe.CheckoutSessionParams{
-		LineItems: []*stripe.CheckoutSessionLineItemParams{
-			&stripe.CheckoutSessionLineItemParams{
-				// Provide the exact Price ID (for example, pr_1234) of the product you want to sell
-				Price:    stripe.String("price_1PA5cTP5EFXn0qOIadD6H5qs"),
-				Quantity: stripe.Int64(1),
-			},
-		},
+		LineItems:  lineItems,
 		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
 		SuccessURL: stripe.String(domain + "?success=true"),
 		CancelURL:  stripe.String(domain + "?canceled=true"),
