@@ -20,7 +20,7 @@ func LoadProductsToRedis() {
 
 	for rows.Next() {
 		var product models.Product
-		if err := rows.Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt, &product.DeletedAt, &product.Title, &product.Price, &product.Description, &product.Category, &product.Image, &product.Rating, &product.Count); err != nil {
+		if err := rows.Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt, &product.DeletedAt, &product.Title, &product.Price, &product.Description, &product.Category, &product.Image, &product.Rating, &product.Count, &product.PriceID); err != nil {
 			log.Printf("Error scanning product row: %v", err)
 			continue
 		}

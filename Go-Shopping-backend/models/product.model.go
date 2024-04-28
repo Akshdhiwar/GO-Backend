@@ -19,4 +19,5 @@ type Product struct {
 	Image       string
 	Rating      float32
 	Count       int
+	PriceID     string
 }

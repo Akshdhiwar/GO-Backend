@@ -49,7 +49,8 @@ func migration() {
 		category TEXT,
 		image TEXT,
 		rating REAL,
-		count INT
+		count INT,
+		price_id TEXT
 	)`)
 
 	if err != nil {

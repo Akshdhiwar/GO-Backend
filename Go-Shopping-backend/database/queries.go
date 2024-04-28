@@ -23,11 +23,11 @@ const (
 // product related queries
 const (
 	SelectProductIdFromId         = "SELECT id FROM products WHERE id = $1"
-	SelectAllFromID               = "SELECT id , created_at , updated_at , title , price , category , description , image , rating , count FROM products WHERE id=$1"
+	SelectAllFromID               = "SELECT id , created_at , updated_at , title , price , category , description , image , rating , count , price_id FROM products WHERE id=$1"
 	SelectAllProductsLimit        = "SELECT * FROM products LIMIT $1 OFFSET $2"
 	SelectAllProducts             = "SELECT * FROM products "
-	SelectProductDetailsFromTitle = ` SELECT id , created_at , updated_at , title , price , category , description , image , rating , count  FROM products WHERE title = $1 LIMIT 1`
-	SaveNewProduct                = ` INSERT INTO products ( title, price, category, image, description, rating , count) VALUES ($1, $2, $3, $4, $5 , $6 , $7)`
+	SelectProductDetailsFromTitle = ` SELECT id , created_at , updated_at , title , price , category , description , image , rating , count , price_id  FROM products WHERE title = $1 LIMIT 1`
+	SaveNewProduct                = ` INSERT INTO products (id , created_at, title, price, category, image, description, rating , count , price_id) VALUES ($1, $2, $3, $4, $5 , $6 , $7 , $8 , $9 , $10)`
 	DeleteProduct                 = ` DELETE FROM products WHERE id = $1`
 	SelectIdFromProductsMismatch  = `SELECT id FROM products WHERE title = $1 AND id != $2`
 	UpdateProduct                 = ` UPDATE products SET title = $1, price = $2, description = $3, category = $4, image = $5 , rating =$6, count =$7 WHERE id = $8`
