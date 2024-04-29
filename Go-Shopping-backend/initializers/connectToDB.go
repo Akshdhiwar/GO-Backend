@@ -12,8 +12,21 @@ import (
 var DB *pgxpool.Pool
 
 func ConnectToDB() {
-	dbUser := os.Getenv("RAILS_DATABASE_USER")
-	dbPassword := os.Getenv("RAILS_DATABASE_PASSWORD")
+	var dbUser string
+
+	if os.Getenv("ENVIRONMENT") == "LOCAL" {
+		dbUser = os.Getenv("RAILS_DATABASE_USER")
+	} else {
+		dbUser = os.Getenv("RAILS_DATABASE_USER_PROD")
+	}
+
+	var dbPassword string
+
+	if os.Getenv("ENVIRONMENT") == "LOCAL" {
+		dbPassword = os.Getenv("RAILS_DATABASE_PASSWORD")
+	} else {
+		dbPassword = os.Getenv("RAILS_DATABASE_PASSWORD_PROD")
+	}
 	dbName := os.Getenv("RAILS_DATABASE_NAME")
 	dbHost := os.Getenv("RAILS_DATABASE_HOST")
 	dbPort := os.Getenv("RAILS_DATABASE_PORT")
