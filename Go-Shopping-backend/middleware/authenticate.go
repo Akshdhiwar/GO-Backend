@@ -11,6 +11,16 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var jwtSecret string
+
+func init() {
+	if os.Getenv("ENVIRONMENT") == "LOCAL" {
+		jwtSecret = os.Getenv("JWTSECRET")
+	} else {
+		jwtSecret = os.Getenv("JWTSECRET_PROD")
+	}
+}
+
 var emailCtxKey = "email"
 
 func extractToken(authHeader string) string {
@@ -32,17 +42,9 @@ func Authenticate(c *gin.Context) {
 		return
 	}
 
-	var jwtSecret []byte
-
-	if os.Getenv("ENVIRONMENT") == "LOCAL" {
-		jwtSecret = []byte(os.Getenv("JWTSECRET"))
-	} else {
-		jwtSecret = []byte(os.Getenv("JWTSECRET_PROD"))
-	}
-
 	// Validate token
 	// convert strign to a byte array
-	email, err := parseJWTToken(token, jwtSecret)
+	email, err := parseJWTToken(token, []byte(jwtSecret))
 
 	if err != nil {
 		log.Printf("Error parsing token: %s", err)
