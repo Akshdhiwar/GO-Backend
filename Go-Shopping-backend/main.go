@@ -3,6 +3,7 @@ package main
 import (
 	"Go-Shopping-backend/api"
 	"Go-Shopping-backend/initializers"
+
 	// "Go-Shopping-backend/middleware"
 	"Go-Shopping-backend/utils"
 	"net/http"
@@ -22,7 +23,7 @@ func init() {
 	initializers.ConnectToDB()
 	initializers.ConnectToRedis()
 	initializers.LoadProductsToRedis()
-	stripe.Key = os.Getenv("STRIPE_SECREZT_KEY")
+	stripe.Key = os.Getenv("RAILS_STRIPE_SECREZT_KEY")
 }
 
 func main() {
