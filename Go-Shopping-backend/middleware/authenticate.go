@@ -32,21 +32,17 @@ func Authenticate(c *gin.Context) {
 		return
 	}
 
-	var jwtSecret string
+	var jwtSecret []byte
 
 	if os.Getenv("ENVIRONMENT") == "LOCAL" {
-		jwtSecret = os.Getenv("JWTSECRET")
+		jwtSecret = []byte(os.Getenv("JWTSECRET"))
 	} else {
-		jwtSecret = os.Getenv("JWTSECRET_PROD")
+		jwtSecret = []byte(os.Getenv("JWTSECRET_PROD"))
 	}
-
-	log.Println(jwtSecret)
-
-	log.Println(os.Getenv("ENVIRONMENT"))
 
 	// Validate token
 	// convert strign to a byte array
-	email, err := parseJWTToken(token, []byte("qbSuyby/Pj3qSYH17t8CSVJIBBn1rOIavhYwAjgnu3JtAQR0+kl3kqPi0ZF9Wwt141ZDukEtGh5QP4R8TjPEtw=="))
+	email, err := parseJWTToken(token, jwtSecret)
 
 	if err != nil {
 		log.Printf("Error parsing token: %s", err)
