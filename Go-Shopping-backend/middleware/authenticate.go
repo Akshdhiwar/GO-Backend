@@ -81,12 +81,15 @@ func parseJWTToken(token string, hmacSecret []byte) (email string, err error) {
 		return hmacSecret, nil
 	})
 
-	// Check if the token is valid
+	// Check if there's an error in parsing or validating the token
 	if err != nil {
-		return "", fmt.Errorf("error validating token: %v", err)
-	} else if claims, ok := t.Claims.(*Claims); ok {
+		return "", fmt.Errorf("error parsing or validating token: %v", err)
+	}
+
+	// Check if the token is valid and extract email from claims
+	if claims, ok := t.Claims.(*Claims); ok && t.Valid {
 		return claims.Email, nil
 	}
 
-	return "", fmt.Errorf("error parsing token: %v", err)
+	return "", fmt.Errorf("invalid token")
 }
