@@ -40,8 +40,6 @@ func Authenticate(c *gin.Context) {
 		jwtSecret = os.Getenv("JWTSECRET_PROD")
 	}
 
-log.Println(jwtSecret)
-
 	// Validate token
 	// convert strign to a byte array
 	email, err := parseJWTToken(token, []byte(jwtSecret))
