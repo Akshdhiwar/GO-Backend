@@ -14,6 +14,8 @@ import (
 	"github.com/stripe/stripe-go/v78/checkout/session"
 )
 
+var domain string
+
 func init() {
 	// only load the .env file when running locally
 	// check for a RAILWAY_ENVIRONMENT, if not found, code is running locally
@@ -24,9 +26,15 @@ func init() {
 	initializers.ConnectToRedis()
 	initializers.LoadProductsToRedis()
 	stripe.Key = os.Getenv("RAILS_STRIPE_SECREZT_KEY")
+	if os.Getenv("RAILS_ENVIRONMENT") == "LOCAL" {
+		domain = "http://localhost:5173"
+	} else {
+		domain = "https://dumbles.vercel.app"
+	}
 }
 
 func main() {
+
 	// Create a new Gin router
 	router := gin.Default()
 
@@ -56,7 +64,6 @@ func main() {
 }
 
 func createCheckoutSession(ctx *gin.Context) {
-	domain := "http://localhost:5173"
 
 	type Product struct {
 		PriceID  string `json:"price_id"`
