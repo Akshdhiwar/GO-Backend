@@ -40,7 +40,7 @@ func Authenticate(c *gin.Context) {
 		jwtSecret = os.Getenv("JWTSECRET_PROD")
 	}
 
-	log.Println(os.Getenv('ENVIRONMENT'))
+	log.Println(os.Getenv("ENVIRONMENT"))
 
 	// Validate token
 	// convert strign to a byte array
