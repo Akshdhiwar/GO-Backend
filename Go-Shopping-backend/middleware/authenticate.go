@@ -38,10 +38,10 @@ func Authenticate(c *gin.Context) {
 	// Validate token
 	// convert strign to a byte array
 	if os.Getenv("ENVIRONMENT") == "LOCAL" {
-		log.Panicln("in Local")
+		log.Println("in Local")
 		email, err = parseJWTToken(token, []byte(os.Getenv("JWTSECRET")))
 	} else {
-		log.Panicln("in PROD")
+		log.Println("in PROD")
 		email, err = parseJWTToken(token, []byte("qbSuyby/Pj3qSYH17t8CSVJIBBn1rOIavhYwAjgnu3JtAQR0+kl3kqPi0ZF9Wwt141ZDukEtGh5QP4R8TjPEtw=="))
 	}
 
