@@ -48,7 +48,7 @@ func Authenticate(c *gin.Context) {
 
 	if err != nil {
 		log.Printf("Error parsing token: %s", err)
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unautorized"})
 		return
 	}
 
