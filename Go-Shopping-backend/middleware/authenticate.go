@@ -40,7 +40,7 @@ func Authenticate(c *gin.Context) {
 	if os.Getenv("ENVIRONMENT") == "LOCAL" {
 		email, err = parseJWTToken(token, []byte(os.Getenv("JWTSECRET")))
 	} else {
-		email, err = parseJWTToken(token, []byte(os.Getenv("JWTSECRET_PROD")))
+		email, err = parseJWTToken(token, []byte("qbSuyby/Pj3qSYH17t8CSVJIBBn1rOIavhYwAjgnu3JtAQR0+kl3kqPi0ZF9Wwt141ZDukEtGh5QP4R8TjPEtw=="))
 	}
 
 	if err != nil {
