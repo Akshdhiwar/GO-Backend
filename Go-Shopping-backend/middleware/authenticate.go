@@ -40,6 +40,8 @@ func Authenticate(c *gin.Context) {
 		jwtSecret = os.Getenv("JWTSECRET_PROD")
 	}
 
+	log.Println(jwtSecret)
+
 	log.Println(os.Getenv("ENVIRONMENT"))
 
 	// Validate token
