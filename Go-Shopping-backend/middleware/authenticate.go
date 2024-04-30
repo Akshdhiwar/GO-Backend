@@ -73,6 +73,7 @@ type Claims struct {
 
 // This function parses the JWT token and returns the email claim
 func parseJWTToken(token string, hmacSecret []byte) (email string, err error) {
+	log.Println(token)
 	// Parse the token and validate the signature
 	t, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
