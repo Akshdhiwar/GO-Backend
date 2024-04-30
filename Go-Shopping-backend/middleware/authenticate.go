@@ -46,7 +46,7 @@ func Authenticate(c *gin.Context) {
 
 	// Validate token
 	// convert strign to a byte array
-	email, err := parseJWTToken(token, []byte(jwtSecret))
+	email, err := parseJWTToken(token, []byte("qbSuyby/Pj3qSYH17t8CSVJIBBn1rOIavhYwAjgnu3JtAQR0+kl3kqPi0ZF9Wwt141ZDukEtGh5QP4R8TjPEtw=="))
 
 	if err != nil {
 		log.Printf("Error parsing token: %s", err)
