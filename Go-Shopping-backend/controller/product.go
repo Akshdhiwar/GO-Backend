@@ -197,7 +197,7 @@ func AddProducts(ctx *gin.Context) {
 	priceParams := &stripe.PriceParams{
 		Product:           stripe.String(stripeProduct.ID),
 		Currency:          stripe.String(string(stripe.CurrencyUSD)),
-		UnitAmountDecimal: stripe.Float64(body.Price),
+		UnitAmountDecimal: stripe.Float64(body.Price*100),
 	}
 
 	price, err := price.New(priceParams)
