@@ -37,7 +37,7 @@ func Authenticate(c *gin.Context) {
 
 	// Validate token
 	// convert strign to a byte array
-	if os.Getenv("ENVIRONMENT") == "LOCAL" {
+	if os.Getenv("RAILS_ENVIRONMENT") == "LOCAL" {
 		log.Println("in Local")
 		email, err = parseJWTToken(token, []byte(os.Getenv("RAILS_JWTSECRET")))
 	} else {

@@ -12,7 +12,7 @@ var RedisClient *redis.Client
 
 func ConnectToRedis() {
 	var client *redis.Client
-	if os.Getenv("ENVIRONMENT") == "LOCAL" {
+	if os.Getenv("RAILS_ENVIRONMENT") == "LOCAL" {
 		// Create a new Redis client
 		client = redis.NewClient(&redis.Options{
 			Addr:     "127.0.0.1:6379", // Redis server address

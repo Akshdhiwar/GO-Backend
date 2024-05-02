@@ -27,9 +27,9 @@ func init() {
 	initializers.LoadProductsToRedis()
 	stripe.Key = os.Getenv("RAILS_STRIPE_SECREZT_KEY")
 	if os.Getenv("RAILS_ENVIRONMENT") == "LOCAL" {
-		domain = "http://localhost:5173"
+		domain = "http://localhost:5173/order-status"
 	} else {
-		domain = "https://dumbles.vercel.app"
+		domain = "https://dumbles.vercel.app/order-status"
 	}
 }
 
