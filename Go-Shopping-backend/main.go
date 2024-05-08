@@ -42,6 +42,8 @@ func init() {
 	} else {
 		endpointSecret = os.Getenv("RAILS_STRIPE_WEBHOOK_PROD")
 	}
+
+	log.Println(endpointSecret)
 }
 
 type WebhookData struct {
