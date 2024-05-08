@@ -19,6 +19,7 @@ import (
 )
 
 var domain string
+var endpointSecret string
 
 func init() {
 	// only load the .env file when running locally
@@ -34,6 +35,12 @@ func init() {
 		domain = "http://localhost:5173/order-status"
 	} else {
 		domain = "https://dumbles.vercel.app/order-status"
+	}
+
+	if os.Getenv("RAILS_ENVIRONMENT") == "LOCAL" {
+		endpointSecret = os.Getenv("RAILS_STRIPE_WEBHOOK")
+	} else {
+		endpointSecret = os.Getenv("RAILS_STRIPE_WEBHOOK_PROD")
 	}
 }
 
@@ -88,7 +95,6 @@ func WebhookController(ctx *gin.Context) {
 		return
 	}
 
-	endpointSecret := "whsec_40e53ab232abf2f63fb1e0f7d8d61c195b6532ca7776082bf8c223331cb1c44e"
 	event, err := webhook.ConstructEvent(body, ctx.GetHeader("Stripe-Signature"), endpointSecret)
 
 	if err != nil {
