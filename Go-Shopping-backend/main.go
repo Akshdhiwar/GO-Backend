@@ -7,7 +7,7 @@ import (
 	"io"
 	"log"
 
-	// "Go-Shopping-backend/middleware"
+	"Go-Shopping-backend/middleware"
 	"Go-Shopping-backend/utils"
 	"net/http"
 	"os"
@@ -77,7 +77,7 @@ func main() {
 	// api route for Cart
 	api.CartRouter(router.Group(baseRoute + "/cart"))
 
-	router.POST(baseRoute+"/create-checkout-session", createCheckoutSession)
+	router.POST(baseRoute+"/create-checkout-session", middleware.Authenticate, createCheckoutSession)
 
 	router.POST("/webhook", WebhookController)
 
@@ -157,11 +157,14 @@ func createCheckoutSession(ctx *gin.Context) {
 		lineItems = append(lineItems, stripeProduct)
 	}
 
+	email := ctx.Request.Header.Get("X-User-Email")
+
 	params := &stripe.CheckoutSessionParams{
-		LineItems:  lineItems,
-		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
-		SuccessURL: stripe.String(domain + "?success=true"),
-		CancelURL:  stripe.String(domain + "?canceled=true"),
+		LineItems:     lineItems,
+		CustomerEmail: stripe.String(email),
+		Mode:          stripe.String(string(stripe.CheckoutSessionModePayment)),
+		SuccessURL:    stripe.String(domain + "?success=true"),
+		CancelURL:     stripe.String(domain + "?canceled=true"),
 	}
 
 	s, err := session.New(params)
@@ -173,61 +176,3 @@ func createCheckoutSession(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"url": s.URL})
 }
-
-// router.GET("/webhook", func(c *gin.Context) {
-// 	// Limit request body size
-// 	const MaxBodyBytes = int64(65536)
-// 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxBodyBytes)
-
-// 	body, err := io.ReadAll(c.Request.Body)
-// 	if err != nil {
-// 		fmt.Fprintf(os.Stderr, "Error reading request body: %v\n", err)
-// 		c.AbortWithStatus(http.StatusServiceUnavailable)
-// 		return
-// 	}
-
-// 	// Pass the request body and Stripe-Signature header to ConstructEvent, along with the webhook signing key
-// 	// You can find your endpoint's secret in your webhook settings
-// 	endpointSecret := "whsec_40e53ab232abf2f63fb1e0f7d8d61c195b6532ca7776082bf8c223331cb1c44e"
-// 	event, err := webhook.ConstructEvent(body, c.GetHeader("Stripe-Signature"), endpointSecret)
-// 	if err != nil {
-// 		fmt.Fprintf(os.Stderr, "Error verifying webhook signature: %v\n", err)
-// 		c.String(http.StatusBadRequest, "Error verifying webhook signature")
-// 		return
-// 	}
-
-// 	// Handle the checkout.session.completed event
-// 	if event.Type == "checkout.session.completed" {
-// 		// var session stripe.CheckoutSession
-
-// 		// jsonData, err := json.Marshal(session)
-// 		// if err != nil {
-// 		// 	c.JSON(http.StatusInternalServerError, gin.H{
-// 		// 		"message": "Error marshlisng session",
-// 		// 	})
-// 		// 	return
-// 		// }
-
-// 		// err = event.Data.UnmarshalJSON(jsonData)
-// 		// if err != nil {
-// 		// 	fmt.Fprintf(os.Stderr, "Error parsing webhook JSON: %v\n", err)
-// 		// 	c.String(http.StatusBadRequest, "Error parsing webhook JSON")
-// 		// 	return
-// 		// }
-
-// 		// params := &stripe.CheckoutSessionParams{}
-// 		// params.AddExpand("line_items")
-
-// 		// fmt.Println("in checkout session")
-
-// 		// // Retrieve the session. If you require line items in the response, you may include them by expanding line_items.
-// 		// sessionWithLineItems, _ := session.Get(session.ID, params)
-// 		// lineItems := sessionWithLineItems.LineItems
-// 		// // Fulfill the purchase...
-// 		// log.Println(lineItems)
-
-// 		log.Println("in checkout session")
-// 	}
-
-// 	c.String(http.StatusOK, "Webhook received")
-// })
