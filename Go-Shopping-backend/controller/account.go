@@ -142,3 +142,21 @@ func Login(ctx *gin.Context) {
 	})
 
 }
+
+func GetUserData(ctx *gin.Context) {
+
+	id := ctx.Param("id")
+
+	var user models.User
+
+	err := initializers.DB.QueryRow(context.Background(), "Select role from users WHERE id = $1", id).Scan(&user.Role)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+			"type":    "error",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, user.Role)
+}
