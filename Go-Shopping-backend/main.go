@@ -125,6 +125,7 @@ func WebhookController(ctx *gin.Context) {
 		lineItems := sessionWithLineItems.LineItems
 
 		log.Println("LineItems", lineItems.Data)
+		api.CreateOrder(ctx, lineItems.Data, CheckoutSession.CustomerEmail)
 	}
 
 	log.Println(event.Type)

@@ -104,5 +104,17 @@ func migration() {
 		log.Fatalf("Failed to create carts table: %v", err)
 	}
 
+	_, err = DB.Exec(context.Background(), `
+		CREATE TABLE IF NOT EXISTS orders (
+			id SERIAL PRIMARY KEY,
+			created_at TIMESTAMPTZ DEFAULT now(),
+    		email TEXT NOT NULL,
+    		products JSONB[] DEFAULT '{}'::JSONB[]
+		)
+	`)
+	if err != nil {
+		log.Fatalf("Failed to create orders table: %v", err)
+	}
+
 	fmt.Println("All migrations executed successfully")
 }
