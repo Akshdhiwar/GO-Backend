@@ -109,6 +109,9 @@ func migration() {
 			id SERIAL PRIMARY KEY,
 			created_at TIMESTAMPTZ DEFAULT now(),
     		email TEXT NOT NULL,
+			name TEXT NOT NULL,
+			total_amount INT64 NOT NULL,
+			status TEXT NOT NULL,
     		products JSONB[] DEFAULT '{}'::JSONB[]
 		)
 	`)
