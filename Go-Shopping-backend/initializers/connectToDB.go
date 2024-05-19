@@ -110,7 +110,7 @@ func migration() {
 			created_at TIMESTAMPTZ DEFAULT now(),
     		email TEXT NOT NULL,
 			name TEXT NOT NULL,
-			total_amount INT64 NOT NULL,
+			total_amount FLOAT NOT NULL,
 			status TEXT NOT NULL,
     		products JSONB[] DEFAULT '{}'::JSONB[]
 		)

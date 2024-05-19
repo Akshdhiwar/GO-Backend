@@ -1,17 +1,22 @@
 package models
 
-import "github.com/google/uuid"
+import (
+	"time"
+)
 
 type Order struct {
-	ID    uint64
-	Items []OrderedProduct
-	Email string
-	Name  string
+	ID          uint64           `json:"id"`
+	Email       string           `json:"email"`
+	Products    []OrderedProduct `json:"products"`
+	CreatedAt   time.Time        `json:"created_at"`
+	Name        string           `json:"name"`
+	TotalAmount float64          `json:"total_amount"`
+	Status      string           `json:"status"`
 }
 
 type OrderedProduct struct {
-	ProductID uuid.UUID
-	Quantity  int
+	ProductName string `json:"product_name"`
+	Quantity    int64  `json:"quantity"`
 }
 
 type Status struct {

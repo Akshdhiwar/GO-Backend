@@ -77,6 +77,9 @@ func main() {
 	// api route for Cart
 	api.CartRouter(router.Group(baseRoute + "/cart"))
 
+	// api route for Orders
+	api.OrderRoute(router.Group(baseRoute + "/order"))
+
 	router.POST(baseRoute+"/create-checkout-session", middleware.Authenticate, createCheckoutSession)
 
 	router.POST("/webhook", WebhookController)
