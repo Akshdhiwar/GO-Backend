@@ -40,11 +40,10 @@ func CreateOrder(ctx *gin.Context, lineItems []*stripe.LineItem, email string) {
 
 		orderProduct.ProductName = result.Name
 		orderProduct.Quantity = lineProduct.Quantity
-
-		productsArray = append(productsArray, orderProduct)
-
 		amount := lineProduct.AmountTotal / 100
+		orderProduct.Price = amount
 		totalAmount = totalAmount + amount
+		productsArray = append(productsArray, orderProduct)
 
 	}
 

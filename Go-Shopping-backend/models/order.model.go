@@ -17,6 +17,7 @@ type Order struct {
 type OrderedProduct struct {
 	ProductName string `json:"product_name"`
 	Quantity    int64  `json:"quantity"`
+	Price       int64  `json:"price"`
 }
 
 type Status struct {
