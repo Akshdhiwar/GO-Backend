@@ -80,6 +80,9 @@ func main() {
 	// api route for Orders
 	api.OrderRoute(router.Group(baseRoute + "/order"))
 
+	// api route for Admins
+	api.AdminRoute(router.Group(baseRoute + "/admin"))
+
 	router.POST(baseRoute+"/create-checkout-session", middleware.Authenticate, createCheckoutSession)
 
 	router.POST("/webhook", WebhookController)
