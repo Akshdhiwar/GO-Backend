@@ -119,5 +119,16 @@ func migration() {
 		log.Fatalf("Failed to create orders table: %v", err)
 	}
 
+	_, err = DB.Exec(context.Background(), `
+		CREATE TABLE IF NOT EXISTS stock (
+			id UUID PRIMARY KEY NOT NULL,
+			units NUMERIC NOT NULL
+		)
+	`)
+
+	if err != nil {
+		log.Fatalf("Failed to create stock table: %v", err)
+	}
+
 	fmt.Println("All migrations executed successfully")
 }

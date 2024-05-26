@@ -212,6 +212,11 @@ func AddProducts(ctx *gin.Context) {
 		log.Fatalf("Error creating new product: %v", err)
 	}
 
+	_, err = initializers.DB.Exec(context.Background(), database.SaveNewProductStock, newProduct.ID, 0)
+	if err != nil {
+		log.Fatalf("Error creating new product stock: %v", err)
+	}
+
 	// var newlyAddedProduct models.Product
 	// err = initializers.DB.QueryRow(context.Background(), database.SelectProductDetailsFromTitle, body.Title).Scan(&newlyAddedProduct.ID, &newlyAddedProduct.CreatedAt, &newlyAddedProduct.UpdatedAt, &newlyAddedProduct.Title, &newlyAddedProduct.Price, &newlyAddedProduct.Description, &newlyAddedProduct.Category, &newlyAddedProduct.Image, &newlyAddedProduct.Rating, &newlyAddedProduct.Count, &newlyAddedProduct.PriceID)
 	// if err != nil {

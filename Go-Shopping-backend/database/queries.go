@@ -32,3 +32,10 @@ const (
 	SelectIdFromProductsMismatch  = `SELECT id FROM products WHERE title = $1 AND id != $2`
 	UpdateProduct                 = ` UPDATE products SET title = $1, price = $2, description = $3, category = $4, image = $5 , rating =$6, count =$7 WHERE id = $8`
 )
+
+// stock related queries
+const (
+	SaveNewProductStock = "INSERT INTO stock (id , units) VALUES ($1 , $2)"
+	GetUnits            = "SELECT units FROM stock WHERE id=$1"
+	UpdateStock         = "UPDATE stock SET units = $1 WHERE id = $2"
+)

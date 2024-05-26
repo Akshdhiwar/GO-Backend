@@ -18,7 +18,7 @@ func GetSingleProductAdmin(ctx *gin.Context) {
 
 	var product models.Product
 
-	err := initializers.DB.QueryRow(context.Background(), database.SelectAllFromID, id).Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt, &product.Title, &product.Price, &product.Description, &product.Category, &product.Image, &product.Rating, &product.Count, &product.PriceID)
+	err := initializers.DB.QueryRow(context.Background(), database.SelectAllFromID, id).Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt, &product.Title, &product.Price, &product.Category, &product.Description, &product.Image, &product.Rating, &product.Count, &product.PriceID)
 	if err == pgx.ErrNoRows {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "No product found",
