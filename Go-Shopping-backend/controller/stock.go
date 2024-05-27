@@ -26,10 +26,10 @@ func UpdateStocks(ctx *gin.Context) {
 
 	// body
 	var body struct {
-		Unit int
+		Unit int `json:"unit"`
 	}
 
-	err = ctx.ShouldBind(&body)
+	err = ctx.ShouldBindJSON(&body)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Error while binding body data",
