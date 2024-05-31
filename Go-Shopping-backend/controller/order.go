@@ -40,7 +40,7 @@ func GetOrder(ctx *gin.Context) {
 
 	for rows.Next() {
 		var order models.Order
-		if err := rows.Scan(&order.ID, &order.CreatedAt, &order.Email, &order.Name, &order.TotalAmount, &order.Status, &order.Products); err != nil {
+		if err := rows.Scan(&order.ID, &order.CreatedAt, &order.Email, &order.Products, &order.Name, &order.TotalAmount, &order.Status); err != nil {
 			log.Printf("Error scanning order row: %v", err)
 			continue
 		}
