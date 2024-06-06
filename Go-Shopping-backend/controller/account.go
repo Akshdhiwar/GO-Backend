@@ -143,7 +143,7 @@ func Login(ctx *gin.Context) {
 
 }
 
-func GetUserData(ctx *gin.Context) {
+func GetUserRole(ctx *gin.Context) {
 
 	id := ctx.Param("id")
 
@@ -159,4 +159,55 @@ func GetUserData(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, user.Role)
+}
+
+func GetUserData(ctx *gin.Context) {
+
+	id := ctx.Param("id")
+
+	var user struct {
+		name   string
+		email  string
+		avatar string
+	}
+
+	err := initializers.DB.QueryRow(context.Background(), "SELECT full_name , avatar_url , email from users WHERE id = $1", id).Scan(&user.name, &user.avatar, &user.email)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+			"type":    "error",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"email":  user.email,
+		"name":   user.name,
+		"avatar": user.avatar,
+	})
+}
+
+func UpdateUserData(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	var body struct {
+		Name  string `json:"name"`
+		Email string `json:"email"`
+	}
+
+	err := ctx.ShouldBind(&body)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Error while binding data to body")
+	}
+
+	if body.Email == "" || body.Name == "" {
+		ctx.JSON(http.StatusInternalServerError, "please send all the required fields")
+	}
+
+	_, err = initializers.DB.Exec(context.Background(), "UPDATE users SET name=$1 , email=$2 WHERE id=$3", body.Name, body.Email, id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Error while Quering to DB")
+	}
+
+	ctx.JSON(http.StatusOK, "Updated Data Successfully")
 }
