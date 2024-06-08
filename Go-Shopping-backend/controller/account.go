@@ -166,9 +166,9 @@ func GetUserData(ctx *gin.Context) {
 	id := ctx.Param("id")
 
 	var user struct {
-		name   string
+		name   *string
 		email  string
-		avatar string
+		avatar *string
 	}
 
 	err := initializers.DB.QueryRow(context.Background(), "SELECT full_name , avatar_url , email from users WHERE id = $1", id).Scan(&user.name, &user.avatar, &user.email)
@@ -191,22 +191,24 @@ func UpdateUserData(ctx *gin.Context) {
 	id := ctx.Param("id")
 
 	var body struct {
-		Name  string `json:"name"`
-		Email string `json:"email"`
+		Name string `json:"name"`
 	}
 
 	err := ctx.ShouldBind(&body)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Error while binding data to body")
+		return
 	}
 
-	if body.Email == "" || body.Name == "" {
+	if body.Name == "" {
 		ctx.JSON(http.StatusInternalServerError, "please send all the required fields")
+		return
 	}
 
-	_, err = initializers.DB.Exec(context.Background(), "UPDATE users SET name=$1 , email=$2 WHERE id=$3", body.Name, body.Email, id)
+	_, err = initializers.DB.Exec(context.Background(), "UPDATE users SET full_name=$1 WHERE id=$2", body.Name, id)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Error while Quering to DB")
+		return
 	}
 
 	ctx.JSON(http.StatusOK, "Updated Data Successfully")
